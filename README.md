@@ -9,6 +9,7 @@ model, or a no-key extractive fallback), with an evaluation on 30 bilingual ques
 and no API key.
 
 [![Live demo](https://img.shields.io/badge/demo-live-0d6b5c)](https://nardy11.github.io/bilingual-rag-assistant/)
+[![CI](https://github.com/Nardy11/bilingual-rag-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/Nardy11/bilingual-rag-assistant/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.10%2B-3776ab)
 ![Retrieval](https://img.shields.io/badge/retrieval-FAISS%20%2B%20BM25%20%2B%20rerank-555)
 ![Languages](https://img.shields.io/badge/languages-Arabic%20%7C%20English-555)
