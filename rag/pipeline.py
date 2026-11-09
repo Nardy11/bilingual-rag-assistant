@@ -66,22 +66,28 @@ class RAGPipeline:
         counter = getattr(self.embedder, "count_tokens", None)
         return counter(text) if counter else simple_token_count(text)
 
-    def add_pages(self, pages: list[Page]) -> int:
+    def add_pages(self, pages: list[Page], index: HybridIndex | None = None) -> int:
         chunks = chunk_pages(pages, self.max_tokens, self.overlap_tokens, self._count)
-        self.index.add(chunks)
+        (index or self.index).add(chunks)
         return len(chunks)
+
+    def fork_index(self) -> HybridIndex:
+        """A private copy of the shared index (e.g. one per Space session), so uploads never touch it."""
+        fork = HybridIndex(self.embedder)
+        fork.add(list(self.index.chunks), self.index.vectors.copy())
+        return fork
 
     def ingest_directory(self, path: str | Path) -> int:
         return self.add_pages(load_directory(path))
 
-    def retrieve(self, question: str, k: int = 5):
-        hits = self.index.hybrid_search(question, k=max(k, RERANK_POOL) if self.reranker else k)
+    def retrieve(self, question: str, k: int = 5, index: HybridIndex | None = None):
+        hits = (index or self.index).hybrid_search(question, k=max(k, RERANK_POOL) if self.reranker else k)
         if self.reranker:
             hits = self.reranker.rerank(question, hits, k)
         return hits
 
-    def ask(self, question: str, k: int = 5) -> Answer:
-        hits = self.retrieve(question, k)
+    def ask(self, question: str, k: int = 5, index: HybridIndex | None = None) -> Answer:
+        hits = self.retrieve(question, k, index)
         confidence = max((h.dense for h in hits), default=0.0)
         if not hits or confidence < self.min_confidence:
             return Answer(
