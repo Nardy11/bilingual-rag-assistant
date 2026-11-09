@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bilingual RAG Assistant</title>
+<meta name="description" content="Ask questions in Arabic or English about a set of documents. Hybrid search (embeddings + BM25) and cited answers, running entirely in your browser.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%230d6b5c%27/%3E%3Cpath d=%27M9 9h14M9 15h14M9 21h9%27 stroke=%27white%27 stroke-width=%273%27 stroke-linecap=%27round%27/%3E%3C/svg%3E">
+</head>
+<body>
+<main class="wrap">
+  <header class="top">
+    <div>
+      <h1>Bilingual RAG Assistant <span class="ar-title" lang="ar" dir="rtl">مساعد المستندات</span></h1>
+      <p class="lede">Ask in <b>Arabic or English</b> about the documents of Falak Home Systems, a fictional company: HR handbook, travel policy, shipping terms, IT security policy and a product FAQ. Search and answers run <b>entirely in your browser</b>, with no server and no API key.</p>
+    </div>
+    <a class="gh" href="https://github.com/Nardy11/bilingual-rag-assistant">Source on GitHub</a>
+  </header>
+
+  <form id="ask" class="ask" autocomplete="off">
+    <input id="q" name="q" type="search" dir="auto" placeholder="How many days of annual leave do I get?  /  متى يجب تغيير فلتر الكربون؟" aria-label="Your question">
+    <button id="go" type="submit" disabled>Ask</button>
+  </form>
+
+  <div class="examples" aria-label="Example questions">
+    <button type="button" class="chip" dir="ltr">How many days a week can I work from home?</button>
+    <button type="button" class="chip" dir="ltr">What does a flashing red light on the filter mean?</button>
+    <button type="button" class="chip" dir="ltr">What is the hotel limit per night in the GCC?</button>
+    <button type="button" class="chip" dir="rtl" lang="ar">متى يجب تغيير فلتر الكربون؟</button>
+    <button type="button" class="chip" dir="rtl" lang="ar">كم مدة إجازة الأمومة؟</button>
+    <button type="button" class="chip" dir="rtl" lang="ar">هل يمكنني استخدام فلاشة USB على حاسوب العمل؟</button>
+  </div>
+
+  <p id="status" class="status" role="status">Loading the multilingual embedding model (about 120 MB, cached after the first visit)…</p>
+
+  <section id="result" class="result" hidden>
+    <article class="answer" id="answer"></article>
+    <h2 class="sources-h">Retrieved passages <span class="muted">hybrid search: embeddings + BM25, fused with reciprocal rank fusion</span></h2>
+    <ol id="sources" class="sources"></ol>
+  </section>
+
+  <footer class="foot">
+    <p>Model: <code>Xenova/multilingual-e5-small</code> (8-bit ONNX) via transformers.js. The document index was precomputed in Python with the same model. This demo uses the extractive answerer: it quotes the best supporting sentences and cites them. The Python service can generate answers with Gemini or any OpenAI-compatible model instead.</p>
+    <p>Sample documents are fictional and written for this project (CC BY 4.0). Code MIT.</p>
+  </footer>
+</main>
+<script type="module" src="app.js"></script>
+</body>
+</html>
