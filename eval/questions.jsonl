@@ -1,0 +1,30 @@
+{"id": "en01", "lang": "en", "question": "How many days of paid annual leave do employees get?", "doc": "employee-handbook.en.md", "evidence": "30 calendar days of paid annual leave", "answer": "30"}
+{"id": "en02", "lang": "en", "question": "How many unused leave days can I carry over to next year?", "doc": "employee-handbook.en.md", "evidence": "carry over a maximum of 10 unused days", "answer": "10"}
+{"id": "en03", "lang": "en", "question": "When do I need a medical certificate for sick leave?", "doc": "employee-handbook.en.md", "evidence": "required for any absence longer than two consecutive days", "answer": "two consecutive days"}
+{"id": "en04", "lang": "en", "question": "How long is the probation period for new hires?", "doc": "employee-handbook.en.md", "evidence": "probation period of 100 days", "answer": "100 days"}
+{"id": "en05", "lang": "en", "question": "How many days a week can I work from home?", "doc": "employee-handbook.en.md", "evidence": "work remotely up to two days per week", "answer": "two days"}
+{"id": "en06", "lang": "en", "question": "What is the yearly training budget for each employee?", "doc": "employee-handbook.en.md", "evidence": "annual training budget of 400 KWD", "answer": "400"}
+{"id": "en07", "lang": "en", "question": "Can directors fly business class?", "doc": "travel-policy.en.pdf", "evidence": "Directors may fly business class on flights longer than six hours", "answer": "six hours"}
+{"id": "en08", "lang": "en", "question": "What is the maximum hotel price per night in the GCC?", "doc": "travel-policy.en.pdf", "evidence": "45 KWD per night inside the GCC", "answer": "45"}
+{"id": "en09", "lang": "en", "question": "How much is the per diem on business trips?", "doc": "travel-policy.en.pdf", "evidence": "daily allowance (per diem) of 25 KWD", "answer": "25"}
+{"id": "en10", "lang": "en", "question": "How long does delivery to Saudi Arabia take?", "doc": "shipping-and-returns.en.txt", "evidence": "delivered within five to seven working days", "answer": "five to seven"}
+{"id": "en11", "lang": "en", "question": "How long until I get my refund after returning an item?", "doc": "shipping-and-returns.en.txt", "evidence": "within 7 working days after we receive", "answer": "7 working days"}
+{"id": "en12", "lang": "en", "question": "How long is the warranty on the Falak Pure 300 water filter?", "doc": "product-faq.ar.md", "evidence": "بضمان لمدة سنتين", "answer": "سنتين", "cross": true}
+{"id": "en13", "lang": "en", "question": "What does a flashing red light on the water filter mean?", "doc": "product-faq.ar.md", "evidence": "الضوء الأحمر الوامض يعني وجود تسريب محتمل", "answer": "تسريب", "cross": true}
+{"id": "en14", "lang": "en", "question": "What is the minimum length of a password?", "doc": "it-security-policy.ar.md", "evidence": "لا يقل طول كلمة المرور عن ١٤ حرفاً", "answer": "14", "cross": true}
+{"id": "en15", "lang": "en", "question": "How soon must I report a lost work laptop?", "doc": "it-security-policy.ar.md", "evidence": "الإبلاغ عن فقدان أو سرقة الحاسوب المحمول", "answer": "24", "cross": true}
+{"id": "ar01", "lang": "ar", "question": "متى يجب تغيير فلتر الكربون؟", "doc": "product-faq.ar.md", "evidence": "تغيير فلتر الكربون والفلتر الرسوبي كل ستة أشهر", "answer": "ستة أشهر"}
+{"id": "ar02", "lang": "ar", "question": "كم تكلفة التركيب خارج مدينة الكويت؟", "doc": "product-faq.ar.md", "evidence": "التركيب خارج هذه المناطق يكلف ١٠ دنانير", "answer": "10"}
+{"id": "ar03", "lang": "ar", "question": "كيف أربط جهاز الفلتر بتطبيق فلك؟", "doc": "product-faq.ar.md", "evidence": "اضغط مطولاً على زر التشغيل", "answer": "خمس ثوان"}
+{"id": "ar04", "lang": "ar", "question": "كم سعر اشتراك فلك كير الشهري؟", "doc": "product-faq.ar.md", "evidence": "مقابل ٤ دنانير كويتية شهرياً", "answer": "4"}
+{"id": "ar05", "lang": "ar", "question": "هل يمكنني إرجاع الجهاز بعد تركيبه؟", "doc": "product-faq.ar.md", "evidence": "بشرط أن يكون غير مُركّب", "answer": "غير مركب"}
+{"id": "ar06", "lang": "ar", "question": "ما هي مواعيد عمل خدمة العملاء؟", "doc": "product-faq.ar.md", "evidence": "من السبت إلى الخميس من الساعة التاسعة صباحاً", "answer": "السبت"}
+{"id": "ar07", "lang": "ar", "question": "كم يستهلك الفلتر من الكهرباء؟", "doc": "product-faq.ar.md", "evidence": "يستهلك الجهاز نحو ٣٦ واط", "answer": "36"}
+{"id": "ar08", "lang": "ar", "question": "ماذا أفعل إذا وصلتني رسالة تصيد احتيالي؟", "doc": "it-security-policy.ar.md", "evidence": "أبلغ عنها خلال ساعة واحدة", "answer": "ساعة واحدة"}
+{"id": "ar09", "lang": "ar", "question": "هل يمكنني استخدام فلاشة USB على حاسوب العمل؟", "doc": "it-security-policy.ar.md", "evidence": "يُمنع استخدام وحدات التخزين المحمولة (USB)", "answer": "يمنع"}
+{"id": "ar10", "lang": "ar", "question": "ما هي مستويات تصنيف البيانات في الشركة؟", "doc": "it-security-policy.ar.md", "evidence": "تُصنّف بيانات الشركة في أربعة مستويات", "answer": "سري للغاية"}
+{"id": "ar11", "lang": "ar", "question": "هل التحقق بخطوتين إلزامي؟", "doc": "it-security-policy.ar.md", "evidence": "التحقق بخطوتين إلزامي لجميع حسابات", "answer": "إلزامي"}
+{"id": "ar12", "lang": "ar", "question": "كم يوماً من الإجازة السنوية المدفوعة يحصل عليها الموظف؟", "doc": "employee-handbook.en.md", "evidence": "30 calendar days of paid annual leave", "answer": "30", "cross": true}
+{"id": "ar13", "lang": "ar", "question": "كم مدة إجازة الأمومة؟", "doc": "employee-handbook.en.md", "evidence": "70 days of maternity leave", "answer": "70", "cross": true}
+{"id": "ar14", "lang": "ar", "question": "ما هي ساعات العمل في شهر رمضان؟", "doc": "employee-handbook.en.md", "evidence": "reduced to six hours per day", "answer": "six hours", "cross": true}
+{"id": "ar15", "lang": "ar", "question": "خلال كم يوم يمكنني إرجاع منتج غير مستخدم بعد التوصيل؟", "doc": "shipping-and-returns.en.txt", "evidence": "returned within 14 days of delivery", "answer": "14 days", "cross": true}
