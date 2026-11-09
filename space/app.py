@@ -54,7 +54,7 @@ def add_files(files, session_index):
             pages.append(load_file(p))
     except UploadTooLarge as e:
         return f"Rejected: {e}", session_index
-    index = session_index or PIPE.fork_index()
+    index = session_index if session_index is not None else PIPE.fork_index()
     added = sum(PIPE.add_pages(pg, index=index) for pg in pages)
     return f"Added {added} passages to your session ({len(index)} in total). Other visitors don't see them.", index
 

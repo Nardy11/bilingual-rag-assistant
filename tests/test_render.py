@@ -27,3 +27,15 @@ def test_session_uploads_do_not_touch_the_shared_index(pipeline):
     assert len(session) == shared_before + 1
     assert "basement B2" in pipeline.ask("Where is the free parking for employees?", index=session).answer
     assert "basement B2" not in pipeline.ask("Where is the free parking for employees?").answer
+
+
+def test_empty_session_index_never_writes_to_the_shared_index(pipeline):
+    from rag.retrieval import HybridIndex
+
+    shared_before = len(pipeline.index)
+    empty = HybridIndex(pipeline.embedder)
+    assert not empty  # falsy: the reason the pipeline checks `is None`
+    pipeline.add_pages([Page("notes.md", 1, "Parking. Free parking is in basement B2 for employees.")], index=empty)
+    assert len(pipeline.index) == shared_before
+    assert len(empty) == 1
+    assert pipeline.retrieve("free parking basement", 1, index=empty)[0].chunk.doc == "notes.md"

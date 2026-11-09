@@ -68,7 +68,9 @@ class RAGPipeline:
 
     def add_pages(self, pages: list[Page], index: HybridIndex | None = None) -> int:
         chunks = chunk_pages(pages, self.max_tokens, self.overlap_tokens, self._count)
-        (index or self.index).add(chunks)
+        # explicit None check: an empty HybridIndex is falsy (__len__) and must not fall back to the shared one
+        target = self.index if index is None else index
+        target.add(chunks)
         return len(chunks)
 
     def fork_index(self) -> HybridIndex:
@@ -81,7 +83,8 @@ class RAGPipeline:
         return self.add_pages(load_directory(path))
 
     def retrieve(self, question: str, k: int = 5, index: HybridIndex | None = None):
-        hits = (index or self.index).hybrid_search(question, k=max(k, RERANK_POOL) if self.reranker else k)
+        target = self.index if index is None else index
+        hits = target.hybrid_search(question, k=max(k, RERANK_POOL) if self.reranker else k)
         if self.reranker:
             hits = self.reranker.rerank(question, hits, k)
         return hits
