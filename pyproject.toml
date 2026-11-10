@@ -22,7 +22,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-models = ["sentence-transformers>=3.0"]
+models = ["sentence-transformers>=3.0", "sentencepiece>=0.2"]
 dev = ["pytest>=8", "ruff>=0.6", "reportlab>=4"]
 
 [tool.setuptools]

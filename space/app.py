@@ -22,7 +22,7 @@ from rag.ingest import SUPPORTED, UploadTooLarge, check_upload_size, load_file  
 from rag.pipeline import RAGPipeline  # noqa: E402
 from rag.render import render_answer, render_citations  # noqa: E402
 
-PIPE = RAGPipeline(rerank=os.getenv("RAG_RERANK", "1") == "1")
+PIPE = RAGPipeline(rerank=os.getenv("RAG_RERANK", "1") == "1", translate=os.getenv("RAG_TRANSLATE", "1") == "1")
 PIPE.ingest_directory(ROOT / "data" / "corpus")
 
 EXAMPLES = [
@@ -30,6 +30,7 @@ EXAMPLES = [
     "What is the hotel limit per night in the GCC?",
     "متى يجب تغيير فلتر الكربون؟",
     "كم مدة إجازة الأمومة؟",
+    "هل عندنا إجازة الأمومة؟",
 ]
 
 

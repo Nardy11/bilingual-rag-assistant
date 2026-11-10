@@ -79,6 +79,8 @@ h1 { font-size: 1.6rem; line-height: 1.25; margin: 0 0 8px; font-weight: 600; le
 }
 .answer .label { display: block; font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
 .answer.notfound { border-inline-start-color: var(--warn); }
+.answer.unsure { border-inline-start-color: var(--warn); border-inline-start-style: dashed; }
+.answer .note { display: block; font-size: 0.9rem; font-style: italic; color: var(--warn); margin-bottom: 6px; }
 .answer .meta { display: block; margin-top: 10px; font-size: 0.82rem; color: var(--muted); }
 sup.cite a {
   font-size: 0.72rem; font-weight: 600; text-decoration: none; color: var(--accent);

@@ -60,7 +60,9 @@ def create_app(pipeline: RAGPipeline | None = None, corpus_dir: str | None = Non
 
     def get() -> RAGPipeline:
         if state["pipeline"] is None:
-            state["pipeline"] = RAGPipeline(rerank=os.getenv("RAG_RERANK", "1") == "1")
+            state["pipeline"] = RAGPipeline(
+                rerank=os.getenv("RAG_RERANK", "1") == "1", translate=os.getenv("RAG_TRANSLATE", "1") == "1"
+            )
             corpus = os.getenv("RAG_CORPUS_DIR", "data/corpus") if corpus_dir is None else corpus_dir
             if corpus and Path(corpus).is_dir():
                 state["pipeline"].ingest_directory(corpus)

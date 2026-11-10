@@ -1,0 +1,16 @@
+{"id": "xl01", "lang": "ar", "question": "هل عندنا إجازة الأمومة؟", "doc": "employee-handbook.en.md", "evidence": "70 days of maternity leave", "answer": "70"}
+{"id": "xl02", "lang": "ar", "question": "هل نأخذ إجازة للحج؟", "doc": "employee-handbook.en.md", "evidence": "21 days of paid Hajj leave", "answer": "21"}
+{"id": "xl03", "lang": "ar", "question": "كم يوم إجازة سنوية؟", "doc": "employee-handbook.en.md", "evidence": "30 calendar days of paid annual leave", "answer": "30"}
+{"id": "xl04", "lang": "ar", "question": "كم يوم إجازة مرضية؟", "doc": "employee-handbook.en.md", "evidence": "15 days of sick leave", "answer": "15"}
+{"id": "xl05", "lang": "ar", "question": "متى يبدأ الدوام؟", "doc": "employee-handbook.en.md", "evidence": "Office hours are 8:00 to 16:00", "answer": "8:00"}
+{"id": "xl06", "lang": "ar", "question": "كم يوم أقدر أشتغل من البيت؟", "doc": "employee-handbook.en.md", "evidence": "work remotely up to two days per week", "answer": "two days"}
+{"id": "xl07", "lang": "ar", "question": "كم مدة فترة التجربة؟", "doc": "employee-handbook.en.md", "evidence": "probation period of 100 days", "answer": "100"}
+{"id": "xl08", "lang": "ar", "question": "كم بدل السفر اليومي؟", "doc": "travel-policy.en.pdf", "evidence": "per diem) of 25 KWD", "answer": "25"}
+{"id": "xl09", "lang": "ar", "question": "متى يرجع لي المبلغ بعد الإرجاع؟", "doc": "shipping-and-returns.en.txt", "evidence": "within 7 working days after we receive", "answer": "7 working days"}
+{"id": "xl10", "lang": "ar", "question": "كم ميزانية التدريب؟", "doc": "employee-handbook.en.md", "evidence": "annual training budget of 400 KWD", "answer": "400"}
+{"id": "xl11", "lang": "en", "question": "what does the red light on the filter mean", "doc": "product-faq.ar.md", "evidence": "الضوء الأحمر الوامض يعني وجود تسريب محتمل للمياه", "answer": "تسريب"}
+{"id": "xl12", "lang": "en", "question": "is two-factor authentication required", "doc": "it-security-policy.ar.md", "evidence": "التحقق بخطوتين إلزامي", "answer": "إلزامي"}
+{"id": "xl13", "lang": "en", "question": "how much is the filter subscription", "doc": "product-faq.ar.md", "evidence": "مقابل ٤ دنانير كويتية شهرياً", "answer": "٤ دنانير"}
+{"id": "xl14", "lang": "en", "question": "when should I change the carbon filter", "doc": "product-faq.ar.md", "evidence": "فلتر الكربون والفلتر الرسوبي كل ستة أشهر", "answer": "ستة أشهر"}
+{"id": "xl15", "lang": "en", "question": "can I use a USB stick on my work laptop", "doc": "it-security-policy.ar.md", "evidence": "يُمنع استخدام وحدات التخزين المحمولة (USB)", "answer": "يُمنع"}
+{"id": "xl16", "lang": "en", "question": "how long is the warranty", "doc": "product-faq.ar.md", "evidence": "بضمان لمدة سنتين", "answer": "سنتين"}

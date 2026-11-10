@@ -2,11 +2,13 @@
 
 Ask questions in **Arabic or English** about a set of documents and get an answer that **cites the exact passages** it
 comes from, or an honest "not found in the documents". Hybrid retrieval (multilingual embeddings + BM25 with
-Arabic-aware normalisation), cross-encoder re-ranking, and a pluggable generator (Gemini, any OpenAI-compatible
-model, or a no-key extractive fallback), with an evaluation on 30 bilingual questions.
+Arabic-aware normalisation), Arabic↔English query translation, cross-encoder re-ranking, and a pluggable generator
+(Gemini, any OpenAI-compatible model, or a no-key extractive fallback), with an evaluation on 46 answerable and 24
+unanswerable bilingual questions.
 
 **▶ [Live demo](https://nardy11.github.io/bilingual-rag-assistant/)**: runs entirely in your browser, with no server
-and no API key.
+and no API key. It answers within a second in *fast mode*. The translation and re-ranking models (about 340 MB,
+cached after the first visit) then load in the background, and *full mode* answers in about 3 s.
 
 [![Live demo](https://img.shields.io/badge/demo-live-0d6b5c)](https://nardy11.github.io/bilingual-rag-assistant/)
 [![CI](https://github.com/Nardy11/bilingual-rag-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/Nardy11/bilingual-rag-assistant/actions/workflows/ci.yml)
@@ -25,10 +27,14 @@ and no API key.
   (ى → ي), taa marbuta (ة → ه) and hamza seats, maps Arabic-Indic digits, and strips the article and attached
   prefixes (ال، وال، بال…). Displayed text is never altered.
 - **Retrieves with three methods**: dense (FAISS, `multilingual-e5-small`), BM25 (`rank_bm25`), and both fused with
-  reciprocal rank fusion. A multilingual cross-encoder then optionally re-ranks the result.
+  reciprocal rank fusion. A multilingual cross-encoder then re-ranks the top 10.
+- **Crosses languages by translating the question.** «هل عندنا إجازة الأمومة؟» is also searched as "Do we have
+  maternity leave?" (MarianMT `opus-mt-ar-en` / `opus-mt-en-ar`). The two result lists are fused, and each passage is
+  re-ranked against both wordings, keeping the better score.
 - **Answers with citations**, `[1]`, `[2]`, each pointing at a chunk id (`travel-policy.en.pdf#p2-c0`) and a page.
-  If the best passage is not similar enough to the question, it answers "Not found in the documents" /
-  «لم أجد الإجابة في المستندات».
+- **Says how sure it is, in three bands:** a confident answer; *"Not sure this answers it. The closest passage in
+  the documents says:"* followed by the quote; or "Not found in the documents" / «لم أجد الإجابة في المستندات» only
+  when nothing comes close. See [Confidence](#confidence-why-three-bands-and-not-a-threshold).
 - **Serves it** as a FastAPI service (`/ingest`, `/ask`), a Docker image, a Gradio app for Hugging Face Spaces, and a
   static GitHub Pages demo that runs the same retrieval in the browser with transformers.js.
 
@@ -43,59 +49,108 @@ flowchart LR
     C --> D[Chunk<br/>160 tokens, 40 overlap,<br/>sentence-aware]
     D --> E1[Embed<br/>multilingual-e5-small<br/>FAISS inner product]
     D --> E2[BM25<br/>normalised tokens]
-    Q[Question<br/>Arabic or English] --> E1
+    Q[Question<br/>Arabic or English] --> T[Translate<br/>opus-mt ar↔en]
+    Q --> E1
     Q --> E2
-    E1 --> F[Reciprocal rank fusion]
+    T --> E1
+    T --> E2
+    E1 --> F[Reciprocal rank fusion<br/>both wordings]
     E2 --> F
-    F --> G[Re-rank<br/>mMiniLM cross-encoder]
-    G --> H{Confidence<br/>above threshold?}
-    H -- no --> N[Not found in the documents]
-    H -- yes --> I[Generate with citations<br/>Gemini / OpenAI-compatible / extractive]
+    F --> G[Re-rank top 10<br/>mMiniLM cross-encoder,<br/>best of both wordings]
+    G --> H{Re-ranker score}
+    H -- "below −4" --> N[Not found in the documents]
+    H -- "−4 to −2" --> U[Not sure:<br/>closest passage]
+    H -- "−2 or more" --> I[Generate with citations<br/>Gemini / OpenAI-compatible / extractive]
+    U --> I
     I --> J[Answer + cited chunk ids and pages]
 ```
 
 ## Evaluation
 
-`eval/questions.jsonl` holds **30 questions, 15 in Arabic and 15 in English**. Each has a gold document, a gold
-evidence span and a short gold fact. 8 of them are **cross-lingual**: an English question whose answer sits in an
-Arabic document, or the other way round. `eval/unanswerable.jsonl` adds 4 questions the documents cannot answer.
-A retrieved chunk counts as gold if it comes from the gold document and contains the evidence span (compared after
-normalisation). Reproduce with `python eval/run_eval.py`; raw per-question output is in
-[`eval/results.json`](eval/results.json). CPU timings are from a Windows laptop.
+Three question sets, all in [`eval/`](eval):
+
+- `questions.jsonl`: **30 questions, 15 in Arabic and 15 in English**, carefully worded. 8 of them are
+  **cross-lingual**: an English question whose answer sits in an Arabic document, or the other way round.
+- `natural_questions.jsonl`: **16 short, conversational cross-language questions**, the way people actually type
+  them («هل عندنا إجازة الأمومة؟», "how long is the warranty"). 10 are Arabic about English documents, and 6 the
+  other way round. This set was added after the first demo refused «هل عندنا إجازة الأمومة؟» even though it had
+  ranked the right passage first.
+- `unanswerable.jsonl`: **24 questions the documents don't answer**: off-topic ("who won the world cup") and
+  plausible-but-missing policies ("Do we have a pension plan?").
+
+Each answerable question has a gold document, a gold evidence span and a short gold fact. A retrieved chunk counts
+as gold if it comes from the gold document and contains the evidence span (compared after normalisation).
+Reproduce with `python eval/run_eval.py`; raw per-question output is in [`eval/results.json`](eval/results.json).
+CPU timings are from a Windows laptop (Ryzen 7 7435HS).
 
 **Retrieval** (26 chunks, k = 10):
 
-| Retriever | Recall@1 | Recall@3 | Recall@5 | MRR@10 | R@5 EN | R@5 AR | R@5 cross-lingual | ms/query |
-|---|---|---|---|---|---|---|---|---|
-| BM25 | 0.63 | 0.77 | 0.77 | 0.689 | 0.80 | 0.73 | 0.12 | 0 |
-| Dense (e5-small) | 0.70 | 0.87 | 0.90 | 0.795 | 0.93 | 0.87 | 0.75 | 24 |
-| Hybrid (RRF) | 0.67 | 0.80 | 0.87 | 0.753 | 0.93 | 0.80 | 0.62 | 26 |
-| Hybrid + rerank | 0.93 | 1.00 | 1.00 | 0.967 | 1.00 | 1.00 | 1.00 | 795 |
+| Retriever | Recall@1 | Recall@5 | MRR@10 | R@5 EN | R@5 AR | R@5 cross-lingual | Natural R@1 | Natural R@5 | ms/query |
+|---|---|---|---|---|---|---|---|---|---|
+| BM25 | 0.63 | 0.77 | 0.689 | 0.80 | 0.73 | 0.12 | 0.00 | 0.06 | 0 |
+| Dense (e5-small) | 0.70 | 0.90 | 0.795 | 0.93 | 0.87 | 0.75 | 0.25 | 0.69 | 25 |
+| Hybrid (RRF) | 0.67 | 0.87 | 0.753 | 0.93 | 0.80 | 0.62 | 0.19 | 0.69 | 30 |
+| Hybrid + rerank | 0.90 | 0.97 | 0.933 | 1.00 | 0.93 | 0.88 | 0.69 | 0.81 | 562 |
+| **Hybrid + translate + rerank** (default) | 0.93 | **1.00** | **0.961** | 1.00 | 1.00 | **1.00** | 0.56 | **1.00** | 1960 |
 
 **End to end with the extractive generator** (no LLM, top 5 passages):
 
-| Pipeline | Answered | Answer has the gold fact | Cites a gold passage | Abstained on unanswerable |
+| Pipeline | Set | Answered | Answered, sure | Answer has the gold fact | Cites a gold passage |
+|---|---|---|---|---|---|
+| Extractive, hybrid | 30 questions | 1.00 | 0.83 | 0.73 | 0.77 |
+| Extractive, hybrid | 16 natural | 1.00 | 0.44 | 0.19 | 0.25 |
+| Extractive, hybrid + rerank | 30 questions | 1.00 | 0.93 | 0.87 | 0.93 |
+| Extractive, hybrid + rerank | 16 natural | 0.88 | 0.44 | 0.56 | 0.62 |
+| **Extractive, translate + rerank** (default) | 30 questions | **1.00** | **1.00** | **1.00** | **1.00** |
+| **Extractive, translate + rerank** (default) | 16 natural | 1.00 | 0.62 | **0.69** | **0.81** |
+
+**Confidence bands** (46 answerable, 24 unanswerable questions):
+
+| Pipeline | Signal | Floor / sure | Answerable: sure · not sure · refused | Unanswerable: sure · not sure · refused |
 |---|---|---|---|---|
-| Extractive, hybrid | 0.97 | 0.70 | 0.73 | 3/4 |
-| Extractive, hybrid + rerank | 0.97 | 0.87 | 0.93 | 4/4 |
+| Extractive, hybrid | top cosine | 0.76 / 0.82 | 32 · 14 · 0 | 0 · 20 · 4 |
+| Extractive, hybrid + rerank | re-ranker score | −4 / −2 | 35 · 9 · 2 | 2 · 4 · 18 |
+| **Extractive, translate + rerank** (default) | re-ranker score | −4 / −2 | **40 · 6 · 0** | 4 · 10 · 10 |
 
 What the numbers say:
 
-- **BM25 cannot cross languages.** It finds 1 of 8 cross-lingual gold passages in the top 5, against 6 of 8 for the
-  multilingual embeddings. On same-language questions it is competitive, and it costs nothing.
-- **On this corpus, plain RRF hybrid is slightly worse than dense alone.** Most of the gap comes from cross-lingual
-  questions, where BM25 promotes same-language passages that share words with the question but do not answer it,
-  and the fusion trusts them. I report it rather than tune the fusion weights on 30 questions. On a larger,
-  single-language corpus with exact identifiers (product codes, clause numbers) the BM25 leg is what catches them.
-- **The cross-encoder is the big win**: recall@1 goes from 0.67 to 0.93 and every gold passage lands in the top 3.
-  It costs about 0.8 s per query on CPU for 20 candidates, which is fine for an assistant and is why re-ranking is
-  on by default in the API and the Space. The browser demo skips it to stay light.
-- **Confidence gating by cosine is weak with E5.** E5 cosines are compressed into a narrow band: the lowest
-  answerable question scored 0.799 and the highest unanswerable 0.809. The 0.80 threshold
-  refuses 3 of 4 out-of-scope questions with plain hybrid retrieval (4 of 4 after re-ranking) and wrongly
-  refuses 1 answerable question, so it is a guard, not a guarantee. With an LLM generator, the prompt's own
-  "reply exactly: not found" rule is the second gate.
-- The set is small (30 + 4 questions over 26 chunks), so differences of one question (0.03) are noise.
+- **Short cross-language questions were the real weak spot**, and the original 30-question set hid it. With
+  hybrid retrieval alone, the right passage is first for only 3 of the 16 natural questions (0.19), and the
+  extractive answer contains the fact for 3 of 16.
+- **The cross-encoder is the big win**: recall@1 on the 30 questions goes from 0.67 to 0.90–0.93, and on the
+  natural questions every gold passage lands in the top 5 once translation is added.
+- **Translation mostly helps the answer, not the ranking.** Natural recall@1 is slightly *lower* with translation
+  (0.56 vs 0.69), because a weak translation ("حج" → "pilgrimage" instead of "Hajj") can promote a wrong passage.
+  But end-to-end answers improve (fact in the answer 0.56 → 0.69, gold citation 0.62 → 0.81), the 30-question set
+  becomes perfect, and no answerable question is refused any more. Both legs stay in, and the trade-off is reported.
+- **BM25 cannot cross languages** on its own (0.12 cross-lingual R@5). With translation it gets a same-language
+  query to match, which is part of why translation helps.
+- **Re-ranking 10 candidates instead of 20** gave the same or better quality at half the cost: natural fact 11/16 vs
+  9/16, no answerable question refused, and 10 of 24 off-topic questions refused instead of 8. That's why
+  `RERANK_POOL = 10`.
+- The sets are small (46 + 24 questions over 26 chunks), so differences of one question are noise.
+
+### Confidence: why three bands and not a threshold
+
+The first version refused any question whose best passage had cosine < 0.80 to the question. That gate was
+calibrated on 4 unanswerable questions, and it failed in practice. «هل عندنا إجازة الأمومة؟» had the maternity
+passage ranked **first**, but scored 0.783 and was refused. On the full sets, **no single cut-off separates
+answerable from unanswerable questions**, on either signal:
+
+- top cosine (e5 squeezes almost everything into 0.75–0.90): answerable min 0.783, unanswerable max 0.813;
+- re-ranker score: at any threshold either real questions are refused or off-topic ones are answered (best
+  accuracy about 88%).
+
+So the score now decides **how sure the answer sounds**, not only whether there is one. The floor (−4 for the
+re-ranker, 0.76 for cosine) is set so that none of the 46 answerable questions is refused. Above it, the answer is
+shown with its citations. Between the floor and the "sure" line it is prefixed with *"Not sure this answers it.
+The closest passage in the documents says:"*. A reader always sees the cited passage and can judge it.
+
+The known cost: **4 of 24 unanswerable questions still get a confident answer** (e.g. "Is there free parking?",
+whose closest passage scores high for no good reason), and 10 get a "not sure" quote. With an LLM generator
+(`RAG_LLM=gemini` / `openai`), the prompt's own "reply exactly: not found" rule is the real second gate: the model
+reads the passage, it does not just measure similarity. The bands are in `rag/pipeline.py` and can be overridden
+with `RAG_MIN_SCORE`, `RAG_SURE_SCORE`, `RAG_MIN_CONFIDENCE` and `RAG_SURE_CONFIDENCE`.
 
 ## Design choices
 
@@ -109,10 +164,20 @@ multilingual retrievers of its size (118M parameters, 384 dimensions), and embed
 on CPU. The same weights exist as an 8-bit ONNX export (`Xenova/multilingual-e5-small`), so the browser demo
 embeds queries in exactly the vector space of the index precomputed in Python. Larger models (`bge-m3`,
 `multilingual-e5-large`) retrieve better but are 5 to 20 times heavier and too large for a browser demo. They are
-one environment variable away (`RAG_EMBED_MODEL`), but the confidence threshold needs re-calibrating.
+one environment variable away (`RAG_EMBED_MODEL`), but the confidence bands need re-calibrating. A quick check
+of `multilingual-e5-base` on the natural cross-language questions did no better than e5-small (1 vs 2 of 13 ranked
+first), so translation plus re-ranking was the better lever.
 
 **Why `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` for re-ranking.** It is a multilingual MiniLM trained on
-mMARCO (14 languages, Arabic included) and is small enough to re-rank 20 passages on CPU in under a second.
+mMARCO (14 languages, Arabic included) and is small enough to re-rank 10 passages × 2 wordings on CPU in under a
+second. Its repository ships quantized ONNX files, so the browser demo runs the very same model.
+
+**Why translate the question.** A chunk usually covers several topics in one language: the maternity sentence sits
+between sick leave and bereavement leave in the English handbook. Scored against the Arabic question, that chunk
+looks only half relevant (−3.7). Scored against the English wording, it is clearly first (−2.7, next best −4.9).
+The translators are MarianMT `Helsinki-NLP/opus-mt-ar-en` and `opus-mt-en-ar` (~300 MB each, CPU; ONNX exports
+`Xenova/opus-mt-*` in the browser). Small MT models sometimes loop ("الدنيا : الدنيا : …"), so a translation
+that is far longer than the question or mostly repeated words is dropped (`rag/translate.py:plausible`).
 
 **Arabic handling.** Arabic spelling varies in practice: hamza on alef is often dropped, ة and ه, and ى and ي
 are swapped, and tashkeel is sometimes present. Matching therefore runs on a normalised form, while the
@@ -151,7 +216,13 @@ out of the answer.
     long" better than "compare X and Y".
   - Arabic PDFs: pypdf's text extraction of Arabic depends on how the PDF was produced and can come out in the
     wrong order. Arabic sample documents are Markdown here, and a scanned or badly encoded Arabic PDF would need OCR.
-  - The confidence threshold is calibrated for e5-small on this corpus.
+  - The confidence bands are calibrated for these models on this corpus, and 4 of 24 unanswerable questions still
+    get a confident answer (see [Confidence](#confidence-why-three-bands-and-not-a-threshold)).
+  - Translation is word-level: «حج» becomes "pilgrimage", which misses a handbook that says "Hajj". Domain terms
+    may need a small glossary.
+  - On short cross-language questions, the extractive answer contains the right fact 69% of the time; most misses
+    quote a neighbouring sentence from the right passage. An LLM generator reads the whole passage and does better.
+  - Full mode in the browser downloads about 340 MB once and takes ~3 s per question on one CPU thread.
   - The evaluation set is small and written by the author, from documents the author also wrote.
 - **Data:** the sample corpus is fictional and written for this repo (CC BY 4.0, see [`data/README.md`](data/README.md)).
   No personal data.
@@ -165,7 +236,7 @@ python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\
 pip install torch --index-url https://download.pytorch.org/whl/cpu
 pip install -e ".[models,dev]"
 
-python -m rag ask "كم مدة إجازة الأمومة؟" --rerank          # CLI
+python -m rag ask "هل عندنا إجازة الأمومة؟" --rerank --translate   # CLI
 uvicorn rag.api:app --port 8000                             # API, docs at http://localhost:8000/docs
 curl -X POST localhost:8000/ask -H "content-type: application/json" \
      -d '{"question": "What is the hotel limit per night in the GCC?"}'
@@ -178,7 +249,8 @@ python scripts/export_web_index.py                          # rebuild docs/index
 ```
 
 Set `GEMINI_API_KEY` (or `OPENAI_API_KEY` / `OPENAI_BASE_URL` / `OPENAI_MODEL`) to switch from extractive answers
-to generated ones. `RAG_RERANK=0` turns re-ranking off, and `RAG_CORPUS_DIR` points the API at your own folder.
+to generated ones. `RAG_RERANK=0` turns re-ranking off, `RAG_TRANSLATE=0` turns query translation off (both are on
+by default in the API and the Space), and `RAG_CORPUS_DIR` points the API at your own folder.
 
 ### Docker
 
@@ -194,7 +266,7 @@ docker run -p 8000:8000 -e GEMINI_API_KEY=... bilingual-rag     # the key is opt
 1. Create a free account at huggingface.co, then **New Space**: SDK *Gradio*, hardware *CPU basic*.
 2. Clone the Space and copy in `space/app.py`, `space/README.md`, `space/requirements.txt`, and the `rag/` and
    `data/` folders (the app finds `rag/` next to itself).
-3. `git add . && git commit -m "Deploy" && git push`. The first build downloads the models (~250 MB) and takes a
+3. `git add . && git commit -m "Deploy" && git push`. The first build downloads the models (~1 GB) and takes a
    few minutes.
 4. Optional: add a `GEMINI_API_KEY` secret in the Space settings for generated answers.
 
@@ -209,15 +281,16 @@ assumed. Contact: [github.com/Nardy11](https://github.com/Nardy11).
 ## Project layout
 
 ```
-rag/            normalize · ingest · chunking · embeddings · retrieval · rerank · generate · pipeline · api
-eval/           questions.jsonl (30), unanswerable.jsonl (4), run_eval.py, results.json
-docs/           GitHub Pages demo: index.html, app.js (browser port of the retriever), index.json
+rag/            normalize · ingest · chunking · embeddings · retrieval · translate · rerank · generate · pipeline · api
+eval/           questions.jsonl (30), natural_questions.jsonl (16), unanswerable.jsonl (24), run_eval.py, results.json
+docs/           GitHub Pages demo: index.html, app.js (browser port of the pipeline), index.json
 space/          Gradio app for Hugging Face Spaces
 data/corpus/    sample documents (fictional, CC BY 4.0)
-tests/          pytest: normalisation, chunking, retrieval on a tiny corpus, API
+tests/          pytest: normalisation, chunking, retrieval, translation and confidence bands, API, rendering
 ```
 
 ## License
 
 Code: [MIT](LICENSE). Sample documents: CC BY 4.0. Models are used under their own licences:
-`intfloat/multilingual-e5-small` (MIT) and `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` (Apache 2.0).
+`intfloat/multilingual-e5-small` (MIT), `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` (Apache 2.0) and
+`Helsinki-NLP/opus-mt-ar-en` / `opus-mt-en-ar` (CC BY 4.0).

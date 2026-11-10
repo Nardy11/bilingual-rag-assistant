@@ -43,7 +43,7 @@ class Generation:
 class Generator(Protocol):
     name: str
 
-    def generate(self, question: str, hits: list[Hit]) -> Generation: ...
+    def generate(self, question: str, hits: list[Hit], alt_queries: tuple[str, ...] = ()) -> Generation: ...
 
 
 def is_answer_candidate(sentence: str) -> bool:
@@ -80,7 +80,7 @@ class OpenAICompatibleGenerator:
         self.api_key = api_key or os.getenv("OPENAI_API_KEY", "")
         self.model = model or os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
-    def generate(self, question: str, hits: list[Hit]) -> Generation:
+    def generate(self, question: str, hits: list[Hit], alt_queries: tuple[str, ...] = ()) -> Generation:
         headers = {"Authorization": f"Bearer {self.api_key}"} if self.api_key else {}
         r = httpx.post(
             f"{self.base_url}/chat/completions",
@@ -100,7 +100,7 @@ class GeminiGenerator:
         self.api_key = api_key or os.environ["GEMINI_API_KEY"]
         self.model = model or os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
-    def generate(self, question: str, hits: list[Hit]) -> Generation:
+    def generate(self, question: str, hits: list[Hit], alt_queries: tuple[str, ...] = ()) -> Generation:
         system, user = build_messages(question, hits)
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent"
         r = httpx.post(
@@ -122,7 +122,8 @@ class GeminiGenerator:
 class ExtractiveGenerator:
     """No-LLM fallback: returns the sentences from the retrieved chunks that best answer the query.
 
-    Sentence score = 0.75 * cosine(query, sentence) + 0.25 * share of query terms in the sentence.
+    Sentence score = 0.75 * cosine(query, sentence) + 0.25 * share of query terms in the sentence,
+    each taken as the better of the question and its translation (``alt_queries``).
     """
 
     name = "extractive"
@@ -132,7 +133,7 @@ class ExtractiveGenerator:
         self.max_sentences = max_sentences
         self.top_chunks = top_chunks
 
-    def generate(self, question: str, hits: list[Hit]) -> Generation:
+    def generate(self, question: str, hits: list[Hit], alt_queries: tuple[str, ...] = ()) -> Generation:
         cands: list[tuple[int, str]] = []
         seen: set[str] = set()  # overlapping chunks repeat sentences; keep the higher-ranked copy
         for i, h in enumerate(hits[: self.top_chunks], start=1):
@@ -142,11 +143,13 @@ class ExtractiveGenerator:
                     cands.append((i, s))
         if not cands:
             return Generation(NOT_FOUND[detect_language(question)])
-        q = self.embedder.embed_queries([question])[0]
+        queries = [question, *[a for a in alt_queries if a]]
+        qv = self.embedder.embed_queries(queries)
         sv = self.embedder.embed_passages([s for _, s in cands])
-        qtok = set(tokenize(question))
-        lex = np.array([len(qtok & set(tokenize(s))) / max(len(qtok), 1) for _, s in cands])
-        score = 0.75 * (sv @ q) + 0.25 * lex
+        dense = (sv @ qv.T).max(axis=1)  # the better of the question and its translation
+        qtoks = [set(tokenize(q)) for q in queries]
+        lex = np.array([max(len(qt & set(tokenize(s))) / max(len(qt), 1) for qt in qtoks) for _, s in cands])
+        score = 0.75 * dense + 0.25 * lex
         best = sorted(np.argsort(-score)[: self.max_sentences])  # keep document order
         best = [b for b in best if score[b] >= score.max() - 0.08] or [int(np.argmax(score))]
         text = " ".join(f"{cands[b][1]} [{cands[b][0]}]" for b in best)

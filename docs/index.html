@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bilingual RAG Assistant</title>
-<meta name="description" content="Ask questions in Arabic or English about a set of documents. Hybrid search (embeddings + BM25) and cited answers, running entirely in your browser.">
+<meta name="description" content="Ask questions in Arabic or English about a set of documents. Hybrid search (embeddings + BM25), Arabic-English query translation, re-ranking and cited answers, running entirely in your browser.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
@@ -16,7 +16,7 @@
   <header class="top">
     <div>
       <h1>Bilingual RAG Assistant <span class="ar-title" lang="ar" dir="rtl">مساعد المستندات</span></h1>
-      <p class="lede">Ask in <b>Arabic or English</b> about the documents of Falak Home Systems, a fictional company: HR handbook, travel policy, shipping terms, IT security policy and a product FAQ. Search and answers run <b>entirely in your browser</b>, with no server and no API key.</p>
+      <p class="lede">Ask in <b>Arabic or English</b> about the documents of Falak Home Systems, a fictional company: HR handbook, travel policy, shipping terms, IT security policy and a product FAQ. Search and answers run <b>entirely in your browser</b>, with no server and no API key. Answers come within a second; the translation and re-ranking models (about 340 MB) then load in the background for better cross-language answers (about 3 s each).</p>
     </div>
     <a class="gh" href="https://github.com/Nardy11/bilingual-rag-assistant">Source on GitHub</a>
   </header>
@@ -31,7 +31,7 @@
     <button type="button" class="chip" dir="ltr">What does a flashing red light on the filter mean?</button>
     <button type="button" class="chip" dir="ltr">What is the hotel limit per night in the GCC?</button>
     <button type="button" class="chip" dir="rtl" lang="ar">متى يجب تغيير فلتر الكربون؟</button>
-    <button type="button" class="chip" dir="rtl" lang="ar">كم مدة إجازة الأمومة؟</button>
+    <button type="button" class="chip" dir="rtl" lang="ar">هل عندنا إجازة الأمومة؟</button>
     <button type="button" class="chip" dir="rtl" lang="ar">هل يمكنني استخدام فلاشة USB على حاسوب العمل؟</button>
   </div>
 
@@ -39,7 +39,7 @@
 
   <section id="result" class="result" hidden>
     <article class="answer" id="answer"></article>
-    <h2 class="sources-h">Retrieved passages <span class="muted">hybrid search: embeddings + BM25, fused with reciprocal rank fusion</span></h2>
+    <h2 class="sources-h">Retrieved passages <span class="muted">hybrid search: embeddings + BM25 for the question and its translation, fused with reciprocal rank fusion, then re-ranked by a cross-encoder</span></h2>
     <ol id="sources" class="sources"></ol>
   </section>
 

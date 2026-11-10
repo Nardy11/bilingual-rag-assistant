@@ -1,5 +1,7 @@
 {
  "n_questions": 30,
+ "n_natural": 16,
+ "n_unanswerable": 24,
  "n_chunks": 26,
  "retrieval": {
   "BM25": {
@@ -27,7 +29,13 @@
     "recall@5": 0.125,
     "mrr@10": 0.041666666666666664
    },
-   "ms_per_query": 0.20001729329427081,
+   "natural cross-language": {
+    "recall@1": 0.0,
+    "recall@3": 0.0625,
+    "recall@5": 0.0625,
+    "mrr@10": 0.03125
+   },
+   "ms_per_query": 0.137707461481509,
    "ranks": {
     "en01": 1,
     "en02": 1,
@@ -58,7 +66,23 @@
     "ar12": null,
     "ar13": null,
     "ar14": null,
-    "ar15": null
+    "ar15": null,
+    "xl01": null,
+    "xl02": null,
+    "xl03": null,
+    "xl04": null,
+    "xl05": null,
+    "xl06": null,
+    "xl07": null,
+    "xl08": null,
+    "xl09": null,
+    "xl10": null,
+    "xl11": null,
+    "xl12": null,
+    "xl13": null,
+    "xl14": null,
+    "xl15": 2,
+    "xl16": null
    }
   },
   "Dense (e5-small)": {
@@ -86,7 +110,13 @@
     "recall@5": 0.75,
     "mrr@10": 0.4657738095238095
    },
-   "ms_per_query": 24.062824249267578,
+   "natural cross-language": {
+    "recall@1": 0.25,
+    "recall@3": 0.4375,
+    "recall@5": 0.6875,
+    "mrr@10": 0.40468750000000003
+   },
+   "ms_per_query": 24.740265763324242,
    "ranks": {
     "en01": 1,
     "en02": 1,
@@ -117,7 +147,23 @@
     "ar12": 3,
     "ar13": 1,
     "ar14": 1,
-    "ar15": 7
+    "ar15": 7,
+    "xl01": 1,
+    "xl02": 5,
+    "xl03": 4,
+    "xl04": 1,
+    "xl05": 5,
+    "xl06": null,
+    "xl07": null,
+    "xl08": 1,
+    "xl09": 5,
+    "xl10": 1,
+    "xl11": 2,
+    "xl12": 8,
+    "xl13": 2,
+    "xl14": 2,
+    "xl15": null,
+    "xl16": null
    }
   },
   "Hybrid (RRF)": {
@@ -145,7 +191,13 @@
     "recall@5": 0.625,
     "mrr@10": 0.2407738095238095
    },
-   "ms_per_query": 26.094985008239746,
+   "natural cross-language": {
+    "recall@1": 0.1875,
+    "recall@3": 0.4375,
+    "recall@5": 0.6875,
+    "mrr@10": 0.3374999999999999
+   },
+   "ms_per_query": 29.876413552657418,
    "ranks": {
     "en01": 1,
     "en02": 1,
@@ -176,15 +228,31 @@
     "ar12": 5,
     "ar13": 2,
     "ar14": 6,
-    "ar15": null
+    "ar15": null,
+    "xl01": 1,
+    "xl02": 5,
+    "xl03": 5,
+    "xl04": 3,
+    "xl05": 6,
+    "xl06": null,
+    "xl07": null,
+    "xl08": 1,
+    "xl09": 5,
+    "xl10": 1,
+    "xl11": 3,
+    "xl12": 10,
+    "xl13": 3,
+    "xl14": 3,
+    "xl15": 5,
+    "xl16": null
    }
   },
   "Hybrid + rerank": {
    "all": {
-    "recall@1": 0.9333333333333333,
-    "recall@3": 1.0,
-    "recall@5": 1.0,
-    "mrr@10": 0.9666666666666667
+    "recall@1": 0.9,
+    "recall@3": 0.9666666666666667,
+    "recall@5": 0.9666666666666667,
+    "mrr@10": 0.9333333333333333
    },
    "en": {
     "recall@1": 0.9333333333333333,
@@ -193,18 +261,24 @@
     "mrr@10": 0.9666666666666667
    },
    "ar": {
-    "recall@1": 0.9333333333333333,
-    "recall@3": 1.0,
-    "recall@5": 1.0,
-    "mrr@10": 0.9666666666666667
+    "recall@1": 0.8666666666666667,
+    "recall@3": 0.9333333333333333,
+    "recall@5": 0.9333333333333333,
+    "mrr@10": 0.9
    },
    "cross-lingual": {
-    "recall@1": 1.0,
-    "recall@3": 1.0,
-    "recall@5": 1.0,
-    "mrr@10": 1.0
+    "recall@1": 0.875,
+    "recall@3": 0.875,
+    "recall@5": 0.875,
+    "mrr@10": 0.875
    },
-   "ms_per_query": 795.1858043670654,
+   "natural cross-language": {
+    "recall@1": 0.6875,
+    "recall@3": 0.8125,
+    "recall@5": 0.8125,
+    "mrr@10": 0.75
+   },
+   "ms_per_query": 561.5500263545824,
    "ranks": {
     "en01": 1,
     "en02": 1,
@@ -235,523 +309,1910 @@
     "ar12": 1,
     "ar13": 1,
     "ar14": 1,
-    "ar15": 1
+    "ar15": null,
+    "xl01": 1,
+    "xl02": 1,
+    "xl03": 1,
+    "xl04": 1,
+    "xl05": 1,
+    "xl06": null,
+    "xl07": null,
+    "xl08": 1,
+    "xl09": 1,
+    "xl10": 1,
+    "xl11": 2,
+    "xl12": 1,
+    "xl13": 1,
+    "xl14": 1,
+    "xl15": 2,
+    "xl16": null
+   }
+  },
+  "Hybrid + translate + rerank": {
+   "all": {
+    "recall@1": 0.9333333333333333,
+    "recall@3": 1.0,
+    "recall@5": 1.0,
+    "mrr@10": 0.961111111111111
+   },
+   "en": {
+    "recall@1": 0.9333333333333333,
+    "recall@3": 1.0,
+    "recall@5": 1.0,
+    "mrr@10": 0.9666666666666667
+   },
+   "ar": {
+    "recall@1": 0.9333333333333333,
+    "recall@3": 1.0,
+    "recall@5": 1.0,
+    "mrr@10": 0.9555555555555556
+   },
+   "cross-lingual": {
+    "recall@1": 1.0,
+    "recall@3": 1.0,
+    "recall@5": 1.0,
+    "mrr@10": 1.0
+   },
+   "natural cross-language": {
+    "recall@1": 0.5625,
+    "recall@3": 0.875,
+    "recall@5": 1.0,
+    "mrr@10": 0.7291666666666666
+   },
+   "ms_per_query": 1960.337239763011,
+   "ranks": {
+    "en01": 1,
+    "en02": 1,
+    "en03": 1,
+    "en04": 1,
+    "en05": 2,
+    "en06": 1,
+    "en07": 1,
+    "en08": 1,
+    "en09": 1,
+    "en10": 1,
+    "en11": 1,
+    "en12": 1,
+    "en13": 1,
+    "en14": 1,
+    "en15": 1,
+    "ar01": 1,
+    "ar02": 1,
+    "ar03": 1,
+    "ar04": 1,
+    "ar05": 1,
+    "ar06": 1,
+    "ar07": 1,
+    "ar08": 1,
+    "ar09": 3,
+    "ar10": 1,
+    "ar11": 1,
+    "ar12": 1,
+    "ar13": 1,
+    "ar14": 1,
+    "ar15": 1,
+    "xl01": 1,
+    "xl02": 3,
+    "xl03": 1,
+    "xl04": 1,
+    "xl05": 2,
+    "xl06": 4,
+    "xl07": 1,
+    "xl08": 1,
+    "xl09": 1,
+    "xl10": 1,
+    "xl11": 2,
+    "xl12": 1,
+    "xl13": 3,
+    "xl14": 1,
+    "xl15": 4,
+    "xl16": 2
    }
   }
  },
- "confidence": {
-  "answerable": {
-   "en01": 0.8778436183929443,
-   "en02": 0.8747650384902954,
-   "en03": 0.897416353225708,
-   "en04": 0.8695680499076843,
-   "en05": 0.8689568042755127,
-   "en06": 0.8552435636520386,
-   "en07": 0.8409961462020874,
-   "en08": 0.8754708766937256,
-   "en09": 0.8681210875511169,
-   "en10": 0.8419787287712097,
-   "en11": 0.8744389414787292,
-   "en12": 0.8491657972335815,
-   "en13": 0.8182259798049927,
-   "en14": 0.7992340326309204,
-   "en15": 0.8414860963821411,
-   "ar01": 0.8948832154273987,
-   "ar02": 0.8338367938995361,
-   "ar03": 0.9073501229286194,
-   "ar04": 0.8650429248809814,
-   "ar05": 0.8725075721740723,
-   "ar06": 0.8719797134399414,
-   "ar07": 0.8611969947814941,
-   "ar08": 0.8649957776069641,
-   "ar09": 0.8219468593597412,
-   "ar10": 0.8346648812294006,
-   "ar11": 0.808385968208313,
-   "ar12": 0.8234211206436157,
-   "ar13": 0.8132521510124207,
-   "ar14": 0.8084384202957153,
-   "ar15": 0.8808788061141968
-  },
-  "unanswerable": {
-   "na01": 0.7980211973190308,
-   "na02": 0.7968806028366089,
-   "na03": 0.7719963788986206,
-   "na04": 0.8092292547225952
-  },
-  "threshold": 0.8
- },
  "generation": {
   "Extractive, hybrid": {
-   "answered": 0.9666666666666667,
-   "answer_has_fact": 0.7,
-   "cites_gold": 0.7333333333333333,
-   "abstained_on_unanswerable": "3/4",
-   "rows": [
-    {
-     "id": "en01",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "Every full-time employee is entitled to 30 calendar days of paid annual leave per year. [1] Employees receive 15 days of sick leave per year at full pay, followed by 10 days at half pay. [2]"
+   "questions": {
+    "answered": 1.0,
+    "answered_sure": 0.8333333333333334,
+    "answer_has_fact": 0.7333333333333333,
+    "cites_gold": 0.7666666666666667,
+    "rows": [
+     {
+      "id": "en01",
+      "found": true,
+      "sure": true,
+      "confidence": 0.8778436183929443,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Every full-time employee is entitled to 30 calendar days of paid annual leave per year. [1] Employees receive 15 days of sick leave per year at full pay, followed by 10 days at half pay. [2]"
+     },
+     {
+      "id": "en02",
+      "found": true,
+      "sure": true,
+      "confidence": 0.8747650384902954,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Employees may carry over a maximum of 10 unused days into the next calendar year; any balance above 10 days is forfeited on 31 March. [1]"
+     },
+     {
+      "id": "en03",
+      "found": true,
+      "sure": true,
+      "confidence": 0.897416353225708,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Employees receive 15 days of sick leave per year at full pay, followed by 10 days at half pay. [1] A medical certificate from a licensed clinic is required for any absence longer than two consecutive days. [1]"
+     },
+     {
+      "id": "en04",
+      "found": true,
+      "sure": true,
+      "confidence": 0.8695680499076843,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "New employees serve a probation period of 100 days. [1] After probation, the notice period is 30 days for staff and 60 days for managers and above. [1]"
+     },
+     {
+      "id": "en05",
+      "found": true,
+      "sure": true,
+      "confidence": 0.8689568042755127,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "After passing probation, employees may work remotely up to two days per week, with the written approval of their line manager. [2]"
+     },
+     {
+      "id": "en06",
+      "found": true,
+      "sure": true,
+      "confidence": 0.8552435636520386,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Each employee has an annual training budget of 400 KWD, which can be used for courses, certifications and conference tickets related to their role. [1]"
+     },
+     {
+      "id": "en07",
+      "found": true,
+      "sure": true,
+      "confidence": 0.8409961462020874,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Directors may fly business class on flights longer than six hours. [1]"
+     },
+     {
+      "id": "en08",
+      "found": true,
+      "sure": true,
+      "confidence": 0.8754708766937256,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "The hotel limit is 45 KWD per night inside the GCC and 70 KWD per night elsewhere. [1]"
+     },
+     {
+      "id": "en09",
+      "found": true,
+      "sure": true,
+      "confidence": 0.8681210875511169,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "A daily allowance (per diem) of 25 KWD covers meals and local transport on travel days. [1] All business trips must be approved by the line manager before any booking is made. [2]"
+     },
+     {
+      "id": "en10",
+      "found": true,
+      "sure": true,
+      "confidence": 0.8419787287712097,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Orders to other GCC countries (Saudi Arabia, the UAE, Bahrain, Qatar and Oman) are delivered within five to seven working days through our courier partner. [1]"
+     },
+     {
+      "id": "en11",
+      "found": true,
+      "sure": true,
+      "confidence": 0.8744389414787292,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Refunds are issued to the original payment method within 7 working days after we receive and inspect the returned item. [1]"
+     },
+     {
+      "id": "en12",
+      "found": true,
+      "sure": true,
+      "confidence": 0.8491657972335815,
+      "answer_has_fact": false,
+      "cites_gold": false,
+      "answer": "Installed water filters and opened filter cartridges cannot be returned for hygiene reasons, unless they are faulty. [1] Falak gift cards are valid for one year from the date of purchase and can be used for any product or for the Falak Care filter subscription. [2]"
+     },
+     {
+      "id": "en13",
+      "found": true,
+      "sure": false,
+      "confidence": 0.8182259798049927,
+      "answer_has_fact": false,
+      "cites_gold": false,
+      "answer": "Installed water filters and opened filter cartridges cannot be returned for hygiene reasons, unless they are faulty. [1] Falak gift cards are valid for one year from the date of purchase and can be used for any product or for the Falak Care filter subscription. [2]"
+     },
+     {
+      "id": "en14",
+      "found": true,
+      "sure": false,
+      "confidence": 0.7992340326309204,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "يجب ألا يقل طول كلمة المرور عن ١٤ حرفاً، وأن تتضمن حروفاً وأرقاماً. [3] لا يجوز استخدام كلمة مرور العمل في أي موقع أو خدمة شخصية. [3]"
+     },
+     {
+      "id": "en15",
+      "found": true,
+      "sure": true,
+      "confidence": 0.8414860963821411,
+      "answer_has_fact": false,
+      "cites_gold": false,
+      "answer": "Employees who resign must return their laptop, badge and any company equipment on their last working day. [1] If your order arrives damaged or you receive the wrong item, report it within 48 hours of delivery through the app or the website, with photos of the item and the packaging. [2]"
+     },
+     {
+      "id": "ar01",
+      "found": true,
+      "sure": true,
+      "confidence": 0.8948832154273987,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "ننصح بتغيير فلتر الكربون والفلتر الرسوبي كل ستة أشهر، وتغيير غشاء التناضح العكسي كل سنتين. [1] يرسل تطبيق «فلك» تنبيهاً قبل موعد التغيير بأسبوعين، ويتحول مؤشر الفلتر على الجهاز إلى اللون البرتقالي عندما يقترب موعد التغيير. [1]"
+     },
+     {
+      "id": "ar02",
+      "found": true,
+      "sure": true,
+      "confidence": 0.8338367938995361,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "نعم، التركيب مجاني داخل مدينة الكويت والمناطق السكنية المجاورة، ويتم خلال ثلاثة أيام عمل من تاريخ الشراء. [1] التركيب خارج هذه المناطق يكلف ١٠ دنانير كويتية. [1]"
+     },
+     {
+      "id": "ar03",
+      "found": true,
+      "sure": true,
+      "confidence": 0.9073501229286194,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "حمّل تطبيق «فلك» من متجر التطبيقات، ثم فعّل البلوتوث في هاتفك، واضغط مطولاً على زر التشغيل في الجهاز لمدة خمس ثوانٍ حتى يومض الضوء الأزرق. [1] يرسل تطبيق «فلك» تنبيهاً قبل موعد التغيير بأسبوعين، ويتحول مؤشر الفلتر على الجهاز إلى اللون البرتقالي عندما يقترب موعد التغيير. [3]"
+     },
+     {
+      "id": "ar04",
+      "found": true,
+      "sure": true,
+      "confidence": 0.8650429248809814,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "نعم، يوفّر اشتراك «فلك كير» توصيل الفلاتر البديلة إلى منزلك تلقائياً مع زيارة فني لتركيبها، مقابل ٤ دنانير كويتية شهرياً. [1]"
+     },
+     {
+      "id": "ar05",
+      "found": true,
+      "sure": true,
+      "confidence": 0.8725075721740723,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "يمكن إرجاع الجهاز خلال ١٤ يوماً من تاريخ الشراء بشرط أن يكون غير مُركّب وفي عبوته الأصلية. [1]"
+     },
+     {
+      "id": "ar06",
+      "found": true,
+      "sure": true,
+      "confidence": 0.8719797134399414,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "خدمة العملاء متاحة من السبت إلى الخميس من الساعة التاسعة صباحاً حتى التاسعة مساءً على الرقم المجاني الموجود في التطبيق، وعبر المحادثة داخل التطبيق. [1]"
+     },
+     {
+      "id": "ar07",
+      "found": true,
+      "sure": true,
+      "confidence": 0.8611969947814941,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "يستهلك الجهاز نحو ٣٦ واط أثناء التشغيل. [1] أغلق محبس المياه الرئيسي وافصل الجهاز عن الكهرباء، ثم تواصل مع خدمة العملاء. [2]"
+     },
+     {
+      "id": "ar08",
+      "found": true,
+      "sure": true,
+      "confidence": 0.8649957776069641,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "إذا وصلتك رسالة مشبوهة فلا تضغط على أي رابط ولا تفتح المرفقات، وأبلغ عنها خلال ساعة واحدة باستخدام زر «الإبلاغ عن تصيّد» في البريد الإلكتروني أو بإرسالها إلى فريق أمن المعلومات. [1]"
+     },
+     {
+      "id": "ar09",
+      "found": true,
+      "sure": true,
+      "confidence": 0.8219468593597412,
+      "answer_has_fact": false,
+      "cites_gold": false,
+      "answer": "يمكن استخدام الهاتف الشخصي للوصول إلى بريد العمل فقط بعد تسجيله في نظام إدارة الأجهزة المحمولة (MDM). [2] يجب قفل شاشة الحاسوب عند مغادرة المكتب ولو لدقائق، وعدم ترك أي مستندات مطبوعة مصنّفة «سري» على المكتب في نهاية اليوم. [2]"
+     },
+     {
+      "id": "ar10",
+      "found": true,
+      "sure": true,
+      "confidence": 0.8346648812294006,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "تُصنّف بيانات الشركة في أربعة مستويات: «عام» و«داخلي» و«سري» و«سري للغاية». [1]"
+     },
+     {
+      "id": "ar11",
+      "found": true,
+      "sure": false,
+      "confidence": 0.808385968208313,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "التحقق بخطوتين إلزامي لجميع حسابات البريد الإلكتروني والأنظمة الداخلية. [1]"
+     },
+     {
+      "id": "ar12",
+      "found": true,
+      "sure": true,
+      "confidence": 0.8234211206436157,
+      "answer_has_fact": false,
+      "cites_gold": false,
+      "answer": "يحق لفريق تقنية المعلومات مسح بيانات العمل وحدها من الهاتف الشخصي عند ترك الموظف للشركة، دون المساس بالصور والملفات الشخصية. [1] يمكن إرجاع الجهاز خلال ١٤ يوماً من تاريخ الشراء بشرط أن يكون غير مُركّب وفي عبوته الأصلية. [2]"
+     },
+     {
+      "id": "ar13",
+      "found": true,
+      "sure": false,
+      "confidence": 0.8132521510124207,
+      "answer_has_fact": false,
+      "cites_gold": true,
+      "answer": "Family and special leave [2] Fathers receive 5 working days of paternity leave, to be taken within the first month after the birth. [2]"
+     },
+     {
+      "id": "ar14",
+      "found": true,
+      "sure": false,
+      "confidence": 0.8084384202957153,
+      "answer_has_fact": false,
+      "cites_gold": false,
+      "answer": "يجب الإبلاغ عن فقدان أو سرقة الحاسوب المحمول أو الهاتف الخاص بالعمل خلال ٢٤ ساعة. [1] العمل عن بُعد والشبكات [1]"
+     },
+     {
+      "id": "ar15",
+      "found": true,
+      "sure": true,
+      "confidence": 0.8808788061141968,
+      "answer_has_fact": false,
+      "cites_gold": false,
+      "answer": "يمكن إرجاع الجهاز خلال ١٤ يوماً من تاريخ الشراء بشرط أن يكون غير مُركّب وفي عبوته الأصلية. [1]"
+     }
+    ]
+   },
+   "natural": {
+    "answered": 1.0,
+    "answered_sure": 0.4375,
+    "answer_has_fact": 0.1875,
+    "cites_gold": 0.25,
+    "rows": [
+     {
+      "id": "xl01",
+      "found": true,
+      "sure": false,
+      "confidence": 0.7830177545547485,
+      "answer_has_fact": false,
+      "cites_gold": true,
+      "answer": "Family and special leave [1] يمكن إلغاء الاشتراك في أي وقت من التطبيق دون رسوم إلغاء، ويُطبّق الإلغاء من بداية الشهر التالي. [2]"
+     },
+     {
+      "id": "xl02",
+      "found": true,
+      "sure": false,
+      "confidence": 0.7869333028793335,
+      "answer_has_fact": false,
+      "cites_gold": false,
+      "answer": "إذا ظهر عيب مصنعي خلال أول ثلاثين يوماً من التركيب نستبدل الجهاز بجهاز جديد مجاناً. [1] يمكن إلغاء الاشتراك في أي وقت من التطبيق دون رسوم إلغاء، ويُطبّق الإلغاء من بداية الشهر التالي. [2]"
+     },
+     {
+      "id": "xl03",
+      "found": true,
+      "sure": false,
+      "confidence": 0.7993695735931396,
+      "answer_has_fact": false,
+      "cites_gold": false,
+      "answer": "يجب قفل شاشة الحاسوب عند مغادرة المكتب ولو لدقائق، وعدم ترك أي مستندات مطبوعة مصنّفة «سري» على المكتب في نهاية اليوم. [1]"
+     },
+     {
+      "id": "xl04",
+      "found": true,
+      "sure": false,
+      "confidence": 0.8115743398666382,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "يجب قفل شاشة الحاسوب عند مغادرة المكتب ولو لدقائق، وعدم ترك أي مستندات مطبوعة مصنّفة «سري» على المكتب في نهاية اليوم. [1] Employees receive 15 days of sick leave per year at full pay, followed by 10 days at half pay. [3]"
+     },
+     {
+      "id": "xl05",
+      "found": true,
+      "sure": false,
+      "confidence": 0.8085510730743408,
+      "answer_has_fact": false,
+      "cites_gold": false,
+      "answer": "خدمة العملاء متاحة من السبت إلى الخميس من الساعة التاسعة صباحاً حتى التاسعة مساءً على الرقم المجاني الموجود في التطبيق، وعبر المحادثة داخل التطبيق. [2] في حالات التسريب الطارئة يتوفر خط طوارئ يعمل على مدار الساعة. [2]"
+     },
+     {
+      "id": "xl06",
+      "found": true,
+      "sure": true,
+      "confidence": 0.8226794600486755,
+      "answer_has_fact": false,
+      "cites_gold": false,
+      "answer": "يجب قفل شاشة الحاسوب عند مغادرة المكتب ولو لدقائق، وعدم ترك أي مستندات مطبوعة مصنّفة «سري» على المكتب في نهاية اليوم. [1] يمكن إرجاع الجهاز خلال ١٤ يوماً من تاريخ الشراء بشرط أن يكون غير مُركّب وفي عبوته الأصلية. [3]"
+     },
+     {
+      "id": "xl07",
+      "found": true,
+      "sure": false,
+      "confidence": 0.8196268677711487,
+      "answer_has_fact": false,
+      "cites_gold": false,
+      "answer": "يمكن إرجاع الجهاز خلال ١٤ يوماً من تاريخ الشراء بشرط أن يكون غير مُركّب وفي عبوته الأصلية. [2] يستهلك الجهاز نحو ٣٦ واط أثناء التشغيل. [2]"
+     },
+     {
+      "id": "xl08",
+      "found": true,
+      "sure": true,
+      "confidence": 0.824721097946167,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "A daily allowance (per diem) of 25 KWD covers meals and local transport on travel days. [1] خدمة العملاء متاحة من السبت إلى الخميس من الساعة التاسعة صباحاً حتى التاسعة مساءً على الرقم المجاني الموجود في التطبيق، وعبر المحادثة داخل التطبيق. [2]"
+     },
+     {
+      "id": "xl09",
+      "found": true,
+      "sure": true,
+      "confidence": 0.8554078340530396,
+      "answer_has_fact": false,
+      "cites_gold": false,
+      "answer": "يمكن إرجاع الجهاز خلال ١٤ يوماً من تاريخ الشراء بشرط أن يكون غير مُركّب وفي عبوته الأصلية. [1] يمكن إلغاء الاشتراك في أي وقت من التطبيق دون رسوم إلغاء، ويُطبّق الإلغاء من بداية الشهر التالي. [2]"
+     },
+     {
+      "id": "xl10",
+      "found": true,
+      "sure": false,
+      "confidence": 0.8038125038146973,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Each employee has an annual training budget of 400 KWD, which can be used for courses, certifications and conference tickets related to their role. [1] سياسة أمن المعلومات لموظفي «فلك للأنظمة المنزلية» [3]"
+     },
+     {
+      "id": "xl11",
+      "found": true,
+      "sure": true,
+      "confidence": 0.82783043384552,
+      "answer_has_fact": false,
+      "cites_gold": false,
+      "answer": "Installed water filters and opened filter cartridges cannot be returned for hygiene reasons, unless they are faulty. [1] Falak gift cards are valid for one year from the date of purchase and can be used for any product or for the Falak Care filter subscription. [2]"
+     },
+     {
+      "id": "xl12",
+      "found": true,
+      "sure": false,
+      "confidence": 0.7989605069160461,
+      "answer_has_fact": false,
+      "cites_gold": false,
+      "answer": "A medical certificate from a licensed clinic is required for any absence longer than two consecutive days. [2]"
+     },
+     {
+      "id": "xl13",
+      "found": true,
+      "sure": true,
+      "confidence": 0.8486959338188171,
+      "answer_has_fact": false,
+      "cites_gold": false,
+      "answer": "Falak gift cards are valid for one year from the date of purchase and can be used for any product or for the Falak Care filter subscription. [2]"
+     },
+     {
+      "id": "xl14",
+      "found": true,
+      "sure": true,
+      "confidence": 0.8424690961837769,
+      "answer_has_fact": false,
+      "cites_gold": false,
+      "answer": "Installed water filters and opened filter cartridges cannot be returned for hygiene reasons, unless they are faulty. [1] Falak gift cards are valid for one year from the date of purchase and can be used for any product or for the Falak Care filter subscription. [2]"
+     },
+     {
+      "id": "xl15",
+      "found": true,
+      "sure": false,
+      "confidence": 0.7843074798583984,
+      "answer_has_fact": false,
+      "cites_gold": false,
+      "answer": "Employees who resign must return their laptop, badge and any company equipment on their last working day. [1] After passing probation, employees may work remotely up to two days per week, with the written approval of their line manager. [1]"
+     },
+     {
+      "id": "xl16",
+      "found": true,
+      "sure": true,
+      "confidence": 0.865056574344635,
+      "answer_has_fact": false,
+      "cites_gold": false,
+      "answer": "If your order arrives damaged or you receive the wrong item, report it within 48 hours of delivery through the app or the website, with photos of the item and the packaging. [1] Refunds are issued to the original payment method within 7 working days after we receive and inspect the returned item. [3]"
+     }
+    ]
+   },
+   "unanswerable": {
+    "refused": 4,
+    "not_sure": 20,
+    "answered_sure": 0,
+    "n": 24,
+    "rows": [
+     {
+      "id": "na01",
+      "found": true,
+      "sure": false,
+      "confidence": 0.7980211973190308
+     },
+     {
+      "id": "na02",
+      "found": true,
+      "sure": false,
+      "confidence": 0.7968806028366089
+     },
+     {
+      "id": "na03",
+      "found": true,
+      "sure": false,
+      "confidence": 0.7719963788986206
+     },
+     {
+      "id": "na04",
+      "found": true,
+      "sure": false,
+      "confidence": 0.8092292547225952
+     },
+     {
+      "id": "na05",
+      "found": true,
+      "sure": false,
+      "confidence": 0.7967379093170166
+     },
+     {
+      "id": "na06",
+      "found": false,
+      "sure": false,
+      "confidence": 0.7368643283843994
+     },
+     {
+      "id": "na07",
+      "found": false,
+      "sure": false,
+      "confidence": 0.7167981863021851
+     },
+     {
+      "id": "na08",
+      "found": true,
+      "sure": false,
+      "confidence": 0.7818666100502014
+     },
+     {
+      "id": "na09",
+      "found": true,
+      "sure": false,
+      "confidence": 0.8050915598869324
+     },
+     {
+      "id": "na10",
+      "found": true,
+      "sure": false,
+      "confidence": 0.7966779470443726
+     },
+     {
+      "id": "na11",
+      "found": true,
+      "sure": false,
+      "confidence": 0.7843911647796631
+     },
+     {
+      "id": "na12",
+      "found": false,
+      "sure": false,
+      "confidence": 0.7590205073356628
+     },
+     {
+      "id": "na13",
+      "found": true,
+      "sure": false,
+      "confidence": 0.7673710584640503
+     },
+     {
+      "id": "na14",
+      "found": true,
+      "sure": false,
+      "confidence": 0.7758954763412476
+     },
+     {
+      "id": "na15",
+      "found": false,
+      "sure": false,
+      "confidence": 0.7341165542602539
+     },
+     {
+      "id": "na16",
+      "found": true,
+      "sure": false,
+      "confidence": 0.8133376836776733
+     },
+     {
+      "id": "na17",
+      "found": true,
+      "sure": false,
+      "confidence": 0.7980204820632935
+     },
+     {
+      "id": "na18",
+      "found": true,
+      "sure": false,
+      "confidence": 0.8010979890823364
+     },
+     {
+      "id": "na19",
+      "found": true,
+      "sure": false,
+      "confidence": 0.8049219846725464
+     },
+     {
+      "id": "na20",
+      "found": true,
+      "sure": false,
+      "confidence": 0.7912492752075195
+     },
+     {
+      "id": "na21",
+      "found": true,
+      "sure": false,
+      "confidence": 0.7622935771942139
+     },
+     {
+      "id": "na22",
+      "found": true,
+      "sure": false,
+      "confidence": 0.8093669414520264
+     },
+     {
+      "id": "na23",
+      "found": true,
+      "sure": false,
+      "confidence": 0.7859293222427368
+     },
+     {
+      "id": "na24",
+      "found": true,
+      "sure": false,
+      "confidence": 0.7870050072669983
+     }
+    ]
+   },
+   "confidence": {
+    "kind": "cosine",
+    "floor": 0.76,
+    "sure": 0.82,
+    "answerable": {
+     "sure": 32,
+     "not_sure": 14,
+     "refused": 0,
+     "min": 0.7830177545547485
     },
-    {
-     "id": "en02",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "Employees may carry over a maximum of 10 unused days into the next calendar year; any balance above 10 days is forfeited on 31 March. [1]"
-    },
-    {
-     "id": "en03",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "Employees receive 15 days of sick leave per year at full pay, followed by 10 days at half pay. [1] A medical certificate from a licensed clinic is required for any absence longer than two consecutive days. [1]"
-    },
-    {
-     "id": "en04",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "New employees serve a probation period of 100 days. [1] After probation, the notice period is 30 days for staff and 60 days for managers and above. [1]"
-    },
-    {
-     "id": "en05",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "After passing probation, employees may work remotely up to two days per week, with the written approval of their line manager. [2]"
-    },
-    {
-     "id": "en06",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "Each employee has an annual training budget of 400 KWD, which can be used for courses, certifications and conference tickets related to their role. [1]"
-    },
-    {
-     "id": "en07",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "Directors may fly business class on flights longer than six hours. [1]"
-    },
-    {
-     "id": "en08",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "The hotel limit is 45 KWD per night inside the GCC and 70 KWD per night elsewhere. [1]"
-    },
-    {
-     "id": "en09",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "A daily allowance (per diem) of 25 KWD covers meals and local transport on travel days. [1] All business trips must be approved by the line manager before any booking is made. [2]"
-    },
-    {
-     "id": "en10",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "Orders to other GCC countries (Saudi Arabia, the UAE, Bahrain, Qatar and Oman) are delivered within five to seven working days through our courier partner. [1]"
-    },
-    {
-     "id": "en11",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "Refunds are issued to the original payment method within 7 working days after we receive and inspect the returned item. [1]"
-    },
-    {
-     "id": "en12",
-     "found": true,
-     "answer_has_fact": false,
-     "cites_gold": false,
-     "answer": "Installed water filters and opened filter cartridges cannot be returned for hygiene reasons, unless they are faulty. [1] Falak gift cards are valid for one year from the date of purchase and can be used for any product or for the Falak Care filter subscription. [2]"
-    },
-    {
-     "id": "en13",
-     "found": true,
-     "answer_has_fact": false,
-     "cites_gold": false,
-     "answer": "Installed water filters and opened filter cartridges cannot be returned for hygiene reasons, unless they are faulty. [1] Falak gift cards are valid for one year from the date of purchase and can be used for any product or for the Falak Care filter subscription. [2]"
-    },
-    {
-     "id": "en14",
-     "found": false,
-     "answer_has_fact": false,
-     "cites_gold": false,
-     "answer": "Not found in the documents."
-    },
-    {
-     "id": "en15",
-     "found": true,
-     "answer_has_fact": false,
-     "cites_gold": false,
-     "answer": "Employees who resign must return their laptop, badge and any company equipment on their last working day. [1] If your order arrives damaged or you receive the wrong item, report it within 48 hours of delivery through the app or the website, with photos of the item and the packaging. [2]"
-    },
-    {
-     "id": "ar01",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "ننصح بتغيير فلتر الكربون والفلتر الرسوبي كل ستة أشهر، وتغيير غشاء التناضح العكسي كل سنتين. [1] يرسل تطبيق «فلك» تنبيهاً قبل موعد التغيير بأسبوعين، ويتحول مؤشر الفلتر على الجهاز إلى اللون البرتقالي عندما يقترب موعد التغيير. [1]"
-    },
-    {
-     "id": "ar02",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "نعم، التركيب مجاني داخل مدينة الكويت والمناطق السكنية المجاورة، ويتم خلال ثلاثة أيام عمل من تاريخ الشراء. [1] التركيب خارج هذه المناطق يكلف ١٠ دنانير كويتية. [1]"
-    },
-    {
-     "id": "ar03",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "حمّل تطبيق «فلك» من متجر التطبيقات، ثم فعّل البلوتوث في هاتفك، واضغط مطولاً على زر التشغيل في الجهاز لمدة خمس ثوانٍ حتى يومض الضوء الأزرق. [1] يرسل تطبيق «فلك» تنبيهاً قبل موعد التغيير بأسبوعين، ويتحول مؤشر الفلتر على الجهاز إلى اللون البرتقالي عندما يقترب موعد التغيير. [3]"
-    },
-    {
-     "id": "ar04",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "نعم، يوفّر اشتراك «فلك كير» توصيل الفلاتر البديلة إلى منزلك تلقائياً مع زيارة فني لتركيبها، مقابل ٤ دنانير كويتية شهرياً. [1]"
-    },
-    {
-     "id": "ar05",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "يمكن إرجاع الجهاز خلال ١٤ يوماً من تاريخ الشراء بشرط أن يكون غير مُركّب وفي عبوته الأصلية. [1]"
-    },
-    {
-     "id": "ar06",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "خدمة العملاء متاحة من السبت إلى الخميس من الساعة التاسعة صباحاً حتى التاسعة مساءً على الرقم المجاني الموجود في التطبيق، وعبر المحادثة داخل التطبيق. [1]"
-    },
-    {
-     "id": "ar07",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "يستهلك الجهاز نحو ٣٦ واط أثناء التشغيل. [1] أغلق محبس المياه الرئيسي وافصل الجهاز عن الكهرباء، ثم تواصل مع خدمة العملاء. [2]"
-    },
-    {
-     "id": "ar08",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "إذا وصلتك رسالة مشبوهة فلا تضغط على أي رابط ولا تفتح المرفقات، وأبلغ عنها خلال ساعة واحدة باستخدام زر «الإبلاغ عن تصيّد» في البريد الإلكتروني أو بإرسالها إلى فريق أمن المعلومات. [1]"
-    },
-    {
-     "id": "ar09",
-     "found": true,
-     "answer_has_fact": false,
-     "cites_gold": false,
-     "answer": "يمكن استخدام الهاتف الشخصي للوصول إلى بريد العمل فقط بعد تسجيله في نظام إدارة الأجهزة المحمولة (MDM). [2] يجب قفل شاشة الحاسوب عند مغادرة المكتب ولو لدقائق، وعدم ترك أي مستندات مطبوعة مصنّفة «سري» على المكتب في نهاية اليوم. [2]"
-    },
-    {
-     "id": "ar10",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "تُصنّف بيانات الشركة في أربعة مستويات: «عام» و«داخلي» و«سري» و«سري للغاية». [1]"
-    },
-    {
-     "id": "ar11",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "التحقق بخطوتين إلزامي لجميع حسابات البريد الإلكتروني والأنظمة الداخلية. [1]"
-    },
-    {
-     "id": "ar12",
-     "found": true,
-     "answer_has_fact": false,
-     "cites_gold": false,
-     "answer": "يحق لفريق تقنية المعلومات مسح بيانات العمل وحدها من الهاتف الشخصي عند ترك الموظف للشركة، دون المساس بالصور والملفات الشخصية. [1] يمكن إرجاع الجهاز خلال ١٤ يوماً من تاريخ الشراء بشرط أن يكون غير مُركّب وفي عبوته الأصلية. [2]"
-    },
-    {
-     "id": "ar13",
-     "found": true,
-     "answer_has_fact": false,
-     "cites_gold": true,
-     "answer": "Family and special leave [2] Fathers receive 5 working days of paternity leave, to be taken within the first month after the birth. [2]"
-    },
-    {
-     "id": "ar14",
-     "found": true,
-     "answer_has_fact": false,
-     "cites_gold": false,
-     "answer": "يجب الإبلاغ عن فقدان أو سرقة الحاسوب المحمول أو الهاتف الخاص بالعمل خلال ٢٤ ساعة. [1] العمل عن بُعد والشبكات [1]"
-    },
-    {
-     "id": "ar15",
-     "found": true,
-     "answer_has_fact": false,
-     "cites_gold": false,
-     "answer": "يمكن إرجاع الجهاز خلال ١٤ يوماً من تاريخ الشراء بشرط أن يكون غير مُركّب وفي عبوته الأصلية. [1]"
+    "unanswerable": {
+     "sure": 0,
+     "not_sure": 20,
+     "refused": 4,
+     "max": 0.8133376836776733
     }
-   ],
-   "unanswerable_rows": [
-    {
-     "id": "na01",
-     "abstained": true
-    },
-    {
-     "id": "na02",
-     "abstained": true
-    },
-    {
-     "id": "na03",
-     "abstained": true
-    },
-    {
-     "id": "na04",
-     "abstained": false
-    }
-   ]
+   }
   },
   "Extractive, hybrid + rerank": {
-   "answered": 0.9666666666666667,
-   "answer_has_fact": 0.8666666666666667,
-   "cites_gold": 0.9333333333333333,
-   "abstained_on_unanswerable": "4/4",
-   "rows": [
-    {
-     "id": "en01",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "Every full-time employee is entitled to 30 calendar days of paid annual leave per year. [1] Muslim employees may take 21 days of paid Hajj leave once during their employment, after completing two years of service. [3]"
+   "questions": {
+    "answered": 1.0,
+    "answered_sure": 0.9333333333333333,
+    "answer_has_fact": 0.8666666666666667,
+    "cites_gold": 0.9333333333333333,
+    "rows": [
+     {
+      "id": "en01",
+      "found": true,
+      "sure": true,
+      "confidence": 6.865044116973877,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Every full-time employee is entitled to 30 calendar days of paid annual leave per year. [1] Muslim employees may take 21 days of paid Hajj leave once during their employment, after completing two years of service. [3]"
+     },
+     {
+      "id": "en02",
+      "found": true,
+      "sure": true,
+      "confidence": 5.910679817199707,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Employees may carry over a maximum of 10 unused days into the next calendar year; any balance above 10 days is forfeited on 31 March. [1]"
+     },
+     {
+      "id": "en03",
+      "found": true,
+      "sure": true,
+      "confidence": 0.5749428272247314,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Employees receive 15 days of sick leave per year at full pay, followed by 10 days at half pay. [1] A medical certificate from a licensed clinic is required for any absence longer than two consecutive days. [1]"
+     },
+     {
+      "id": "en04",
+      "found": true,
+      "sure": true,
+      "confidence": -0.8004342913627625,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "New employees serve a probation period of 100 days. [1] After probation, the notice period is 30 days for staff and 60 days for managers and above. [1]"
+     },
+     {
+      "id": "en05",
+      "found": true,
+      "sure": false,
+      "confidence": -2.189767599105835,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "After passing probation, employees may work remotely up to two days per week, with the written approval of their line manager. [2]"
+     },
+     {
+      "id": "en06",
+      "found": true,
+      "sure": true,
+      "confidence": 4.903573989868164,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Each employee has an annual training budget of 400 KWD, which can be used for courses, certifications and conference tickets related to their role. [1]"
+     },
+     {
+      "id": "en07",
+      "found": true,
+      "sure": true,
+      "confidence": 2.6036062240600586,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Directors may fly business class on flights longer than six hours. [1]"
+     },
+     {
+      "id": "en08",
+      "found": true,
+      "sure": true,
+      "confidence": 5.831453323364258,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "The hotel limit is 45 KWD per night inside the GCC and 70 KWD per night elsewhere. [1]"
+     },
+     {
+      "id": "en09",
+      "found": true,
+      "sure": true,
+      "confidence": 0.32177358865737915,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "A daily allowance (per diem) of 25 KWD covers meals and local transport on travel days. [1]"
+     },
+     {
+      "id": "en10",
+      "found": true,
+      "sure": true,
+      "confidence": -0.8304800391197205,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Orders to other GCC countries (Saudi Arabia, the UAE, Bahrain, Qatar and Oman) are delivered within five to seven working days through our courier partner. [1]"
+     },
+     {
+      "id": "en11",
+      "found": true,
+      "sure": true,
+      "confidence": 1.06172513961792,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Refunds are issued to the original payment method within 7 working days after we receive and inspect the returned item. [1]"
+     },
+     {
+      "id": "en12",
+      "found": true,
+      "sure": true,
+      "confidence": 5.3440775871276855,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "الأسئلة الشائعة — فلتر المياه الذكي «فلك بيور ٣٠٠» [1] يأتي جهاز «فلك بيور ٣٠٠» بضمان لمدة سنتين من تاريخ التركيب، ويشمل الضمان المضخة واللوحة الإلكترونية والصمامات. [1]"
+     },
+     {
+      "id": "en13",
+      "found": true,
+      "sure": true,
+      "confidence": 2.3391077518463135,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "الضوء الأحمر الوامض يعني وجود تسريب محتمل للمياه، وعندها يغلق الجهاز صمام الدخول تلقائياً. [1] أما الضوء الأحمر الثابت فيعني أن الفلتر انتهت صلاحيته ويجب تغييره فوراً. [1]"
+     },
+     {
+      "id": "en14",
+      "found": true,
+      "sure": true,
+      "confidence": 0.3011994957923889,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "يجب ألا يقل طول كلمة المرور عن ١٤ حرفاً، وأن تتضمن حروفاً وأرقاماً. [1] لا يجوز استخدام كلمة مرور العمل في أي موقع أو خدمة شخصية. [1]"
+     },
+     {
+      "id": "en15",
+      "found": true,
+      "sure": true,
+      "confidence": 2.657695770263672,
+      "answer_has_fact": false,
+      "cites_gold": false,
+      "answer": "Employees who resign must return their laptop, badge and any company equipment on their last working day. [3] After passing probation, employees may work remotely up to two days per week, with the written approval of their line manager. [3]"
+     },
+     {
+      "id": "ar01",
+      "found": true,
+      "sure": true,
+      "confidence": 3.868349075317383,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "ننصح بتغيير فلتر الكربون والفلتر الرسوبي كل ستة أشهر، وتغيير غشاء التناضح العكسي كل سنتين. [1] يرسل تطبيق «فلك» تنبيهاً قبل موعد التغيير بأسبوعين، ويتحول مؤشر الفلتر على الجهاز إلى اللون البرتقالي عندما يقترب موعد التغيير. [1]"
+     },
+     {
+      "id": "ar02",
+      "found": true,
+      "sure": true,
+      "confidence": 6.933013916015625,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "نعم، التركيب مجاني داخل مدينة الكويت والمناطق السكنية المجاورة، ويتم خلال ثلاثة أيام عمل من تاريخ الشراء. [1] التركيب خارج هذه المناطق يكلف ١٠ دنانير كويتية. [1]"
+     },
+     {
+      "id": "ar03",
+      "found": true,
+      "sure": true,
+      "confidence": 10.37617015838623,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "حمّل تطبيق «فلك» من متجر التطبيقات، ثم فعّل البلوتوث في هاتفك، واضغط مطولاً على زر التشغيل في الجهاز لمدة خمس ثوانٍ حتى يومض الضوء الأزرق. [1] يرسل تطبيق «فلك» تنبيهاً قبل موعد التغيير بأسبوعين، ويتحول مؤشر الفلتر على الجهاز إلى اللون البرتقالي عندما يقترب موعد التغيير. [3]"
+     },
+     {
+      "id": "ar04",
+      "found": true,
+      "sure": true,
+      "confidence": 1.4480884075164795,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "نعم، يوفّر اشتراك «فلك كير» توصيل الفلاتر البديلة إلى منزلك تلقائياً مع زيارة فني لتركيبها، مقابل ٤ دنانير كويتية شهرياً. [1]"
+     },
+     {
+      "id": "ar05",
+      "found": true,
+      "sure": true,
+      "confidence": 0.6263430714607239,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "يمكن إرجاع الجهاز خلال ١٤ يوماً من تاريخ الشراء بشرط أن يكون غير مُركّب وفي عبوته الأصلية. [1]"
+     },
+     {
+      "id": "ar06",
+      "found": true,
+      "sure": true,
+      "confidence": 0.5628965497016907,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "خدمة العملاء متاحة من السبت إلى الخميس من الساعة التاسعة صباحاً حتى التاسعة مساءً على الرقم المجاني الموجود في التطبيق، وعبر المحادثة داخل التطبيق. [1]"
+     },
+     {
+      "id": "ar07",
+      "found": true,
+      "sure": true,
+      "confidence": 1.0397121906280518,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "يستهلك الجهاز نحو ٣٦ واط أثناء التشغيل. [1] أغلق محبس المياه الرئيسي وافصل الجهاز عن الكهرباء، ثم تواصل مع خدمة العملاء. [2]"
+     },
+     {
+      "id": "ar08",
+      "found": true,
+      "sure": true,
+      "confidence": 2.452788829803467,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "إذا وصلتك رسالة مشبوهة فلا تضغط على أي رابط ولا تفتح المرفقات، وأبلغ عنها خلال ساعة واحدة باستخدام زر «الإبلاغ عن تصيّد» في البريد الإلكتروني أو بإرسالها إلى فريق أمن المعلومات. [1]"
+     },
+     {
+      "id": "ar09",
+      "found": true,
+      "sure": false,
+      "confidence": -3.522775411605835,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "يجب قفل شاشة الحاسوب عند مغادرة المكتب ولو لدقائق، وعدم ترك أي مستندات مطبوعة مصنّفة «سري» على المكتب في نهاية اليوم. [1] يُمنع استخدام وحدات التخزين المحمولة (USB) على أجهزة الشركة، وتُعطَّل منافذها تلقائياً. [2]"
+     },
+     {
+      "id": "ar10",
+      "found": true,
+      "sure": true,
+      "confidence": 4.258759498596191,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "تُصنّف بيانات الشركة في أربعة مستويات: «عام» و«داخلي» و«سري» و«سري للغاية». [1]"
+     },
+     {
+      "id": "ar11",
+      "found": true,
+      "sure": true,
+      "confidence": 1.1770479679107666,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "التحقق بخطوتين إلزامي لجميع حسابات البريد الإلكتروني والأنظمة الداخلية. [1]"
+     },
+     {
+      "id": "ar12",
+      "found": true,
+      "sure": true,
+      "confidence": 3.206010580062866,
+      "answer_has_fact": false,
+      "cites_gold": true,
+      "answer": "Employees who work on a public holiday at their manager's request receive a replacement day off, to be taken within 60 days. [1] Employees receive 15 days of sick leave per year at full pay, followed by 10 days at half pay. [2]"
+     },
+     {
+      "id": "ar13",
+      "found": true,
+      "sure": true,
+      "confidence": -1.9898592233657837,
+      "answer_has_fact": false,
+      "cites_gold": true,
+      "answer": "Family and special leave [1] Fathers receive 5 working days of paternity leave, to be taken within the first month after the birth. [1]"
+     },
+     {
+      "id": "ar14",
+      "found": true,
+      "sure": true,
+      "confidence": 2.145944595336914,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Office hours are 8:00 to 16:00, with a one-hour lunch break, for a total of 35 working hours per week. [1] During the holy month of Ramadan, working hours are reduced to six hours per day, from 9:00 to 15:00. [1]"
+     },
+     {
+      "id": "ar15",
+      "found": true,
+      "sure": true,
+      "confidence": 0.6957398056983948,
+      "answer_has_fact": false,
+      "cites_gold": false,
+      "answer": "يمكن إرجاع الجهاز خلال ١٤ يوماً من تاريخ الشراء بشرط أن يكون غير مُركّب وفي عبوته الأصلية. [1]"
+     }
+    ]
+   },
+   "natural": {
+    "answered": 0.875,
+    "answered_sure": 0.4375,
+    "answer_has_fact": 0.5625,
+    "cites_gold": 0.625,
+    "rows": [
+     {
+      "id": "xl01",
+      "found": false,
+      "sure": false,
+      "confidence": -4.443302631378174,
+      "answer_has_fact": false,
+      "cites_gold": false,
+      "answer": "لم أجد الإجابة في المستندات."
+     },
+     {
+      "id": "xl02",
+      "found": true,
+      "sure": false,
+      "confidence": -3.5263211727142334,
+      "answer_has_fact": false,
+      "cites_gold": false,
+      "answer": "يمكن إلغاء الاشتراك في أي وقت من التطبيق دون رسوم إلغاء، ويُطبّق الإلغاء من بداية الشهر التالي. [2] يجب قفل شاشة الحاسوب عند مغادرة المكتب ولو لدقائق، وعدم ترك أي مستندات مطبوعة مصنّفة «سري» على المكتب في نهاية اليوم. [3]"
+     },
+     {
+      "id": "xl03",
+      "found": true,
+      "sure": true,
+      "confidence": 0.02006218209862709,
+      "answer_has_fact": false,
+      "cites_gold": true,
+      "answer": "Employees who work on a public holiday at their manager's request receive a replacement day off, to be taken within 60 days. [1] Employees may carry over a maximum of 10 unused days into the next calendar year; any balance above 10 days is forfeited on 31 March. [1]"
+     },
+     {
+      "id": "xl04",
+      "found": true,
+      "sure": true,
+      "confidence": -0.2964845299720764,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Employees receive 15 days of sick leave per year at full pay, followed by 10 days at half pay. [1] Employees who work on a public holiday at their manager's request receive a replacement day off, to be taken within 60 days. [3]"
+     },
+     {
+      "id": "xl05",
+      "found": true,
+      "sure": false,
+      "confidence": -3.4860000610351562,
+      "answer_has_fact": false,
+      "cites_gold": false,
+      "answer": "خدمة العملاء متاحة من السبت إلى الخميس من الساعة التاسعة صباحاً حتى التاسعة مساءً على الرقم المجاني الموجود في التطبيق، وعبر المحادثة داخل التطبيق. [3] في حالات التسريب الطارئة يتوفر خط طوارئ يعمل على مدار الساعة. [3]"
+     },
+     {
+      "id": "xl06",
+      "found": true,
+      "sure": false,
+      "confidence": -2.964240074157715,
+      "answer_has_fact": false,
+      "cites_gold": false,
+      "answer": "نعم، يوفّر اشتراك «فلك كير» توصيل الفلاتر البديلة إلى منزلك تلقائياً مع زيارة فني لتركيبها، مقابل ٤ دنانير كويتية شهرياً. [3] يمكن إرجاع الجهاز خلال ١٤ يوماً من تاريخ الشراء بشرط أن يكون غير مُركّب وفي عبوته الأصلية. [3]"
+     },
+     {
+      "id": "xl07",
+      "found": false,
+      "sure": false,
+      "confidence": -4.6899285316467285,
+      "answer_has_fact": false,
+      "cites_gold": false,
+      "answer": "لم أجد الإجابة في المستندات."
+     },
+     {
+      "id": "xl08",
+      "found": true,
+      "sure": true,
+      "confidence": 1.221725583076477,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "A daily allowance (per diem) of 25 KWD covers meals and local transport on travel days. [1] نعم، يوفّر اشتراك «فلك كير» توصيل الفلاتر البديلة إلى منزلك تلقائياً مع زيارة فني لتركيبها، مقابل ٤ دنانير كويتية شهرياً. [3]"
+     },
+     {
+      "id": "xl09",
+      "found": true,
+      "sure": false,
+      "confidence": -3.24310040473938,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Refunds are issued to the original payment method within 7 working days after we receive and inspect the returned item. [1] إذا وصلتك رسالة مشبوهة فلا تضغط على أي رابط ولا تفتح المرفقات، وأبلغ عنها خلال ساعة واحدة باستخدام زر «الإبلاغ عن تصيّد» في البريد الإلكتروني أو بإرسالها إلى فريق أمن المعلومات. [3]"
+     },
+     {
+      "id": "xl10",
+      "found": true,
+      "sure": true,
+      "confidence": -0.4251924157142639,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Each employee has an annual training budget of 400 KWD, which can be used for courses, certifications and conference tickets related to their role. [1] سياسة أمن المعلومات لموظفي «فلك للأنظمة المنزلية» [3]"
+     },
+     {
+      "id": "xl11",
+      "found": true,
+      "sure": true,
+      "confidence": 1.431464433670044,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "أما الضوء الأحمر الثابت فيعني أن الفلتر انتهت صلاحيته ويجب تغييره فوراً. [1] الضوء الأحمر الوامض يعني وجود تسريب محتمل للمياه، وعندها يغلق الجهاز صمام الدخول تلقائياً. [2]"
+     },
+     {
+      "id": "xl12",
+      "found": true,
+      "sure": true,
+      "confidence": -0.7323703169822693,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "التحقق بخطوتين إلزامي لجميع حسابات البريد الإلكتروني والأنظمة الداخلية. [1] Visa fees, travel insurance and vaccinations required for the destination are paid by the company. [3]"
+     },
+     {
+      "id": "xl13",
+      "found": true,
+      "sure": false,
+      "confidence": -3.90254282951355,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "يعرض التطبيق نسبة الأملاح الذائبة في الماء (TDS) قبل الفلترة وبعدها. [1] نعم، يوفّر اشتراك «فلك كير» توصيل الفلاتر البديلة إلى منزلك تلقائياً مع زيارة فني لتركيبها، مقابل ٤ دنانير كويتية شهرياً. [1]"
+     },
+     {
+      "id": "xl14",
+      "found": true,
+      "sure": true,
+      "confidence": 4.31012487411499,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "ننصح بتغيير فلتر الكربون والفلتر الرسوبي كل ستة أشهر، وتغيير غشاء التناضح العكسي كل سنتين. [1] يرسل تطبيق «فلك» تنبيهاً قبل موعد التغيير بأسبوعين، ويتحول مؤشر الفلتر على الجهاز إلى اللون البرتقالي عندما يقترب موعد التغيير. [1]"
+     },
+     {
+      "id": "xl15",
+      "found": true,
+      "sure": false,
+      "confidence": -3.3660874366760254,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "يُمنع استخدام وحدات التخزين المحمولة (USB) على أجهزة الشركة، وتُعطَّل منافذها تلقائياً. [2] يمكن استخدام الهاتف الشخصي للوصول إلى بريد العمل فقط بعد تسجيله في نظام إدارة الأجهزة المحمولة (MDM). [3]"
+     },
+     {
+      "id": "xl16",
+      "found": true,
+      "sure": false,
+      "confidence": -3.651602029800415,
+      "answer_has_fact": false,
+      "cites_gold": false,
+      "answer": "If your order arrives damaged or you receive the wrong item, report it within 48 hours of delivery through the app or the website, with photos of the item and the packaging. [2] After probation, the notice period is 30 days for staff and 60 days for managers and above. [3]"
+     }
+    ]
+   },
+   "unanswerable": {
+    "refused": 18,
+    "not_sure": 4,
+    "answered_sure": 2,
+    "n": 24,
+    "rows": [
+     {
+      "id": "na01",
+      "found": false,
+      "sure": false,
+      "confidence": -6.1767048835754395
+     },
+     {
+      "id": "na02",
+      "found": false,
+      "sure": false,
+      "confidence": -6.598377704620361
+     },
+     {
+      "id": "na03",
+      "found": false,
+      "sure": false,
+      "confidence": -6.802948474884033
+     },
+     {
+      "id": "na04",
+      "found": false,
+      "sure": false,
+      "confidence": -4.720339298248291
+     },
+     {
+      "id": "na05",
+      "found": false,
+      "sure": false,
+      "confidence": -5.466399669647217
+     },
+     {
+      "id": "na06",
+      "found": false,
+      "sure": false,
+      "confidence": -9.051552772521973
+     },
+     {
+      "id": "na07",
+      "found": false,
+      "sure": false,
+      "confidence": -4.996151924133301
+     },
+     {
+      "id": "na08",
+      "found": false,
+      "sure": false,
+      "confidence": -6.613824367523193
+     },
+     {
+      "id": "na09",
+      "found": false,
+      "sure": false,
+      "confidence": -5.223727703094482
+     },
+     {
+      "id": "na10",
+      "found": false,
+      "sure": false,
+      "confidence": -5.807155132293701
+     },
+     {
+      "id": "na11",
+      "found": true,
+      "sure": true,
+      "confidence": 0.8212403655052185
+     },
+     {
+      "id": "na12",
+      "found": false,
+      "sure": false,
+      "confidence": -4.376422882080078
+     },
+     {
+      "id": "na13",
+      "found": true,
+      "sure": false,
+      "confidence": -3.969087839126587
+     },
+     {
+      "id": "na14",
+      "found": true,
+      "sure": false,
+      "confidence": -3.9401299953460693
+     },
+     {
+      "id": "na15",
+      "found": false,
+      "sure": false,
+      "confidence": -9.836129188537598
+     },
+     {
+      "id": "na16",
+      "found": false,
+      "sure": false,
+      "confidence": -5.270936489105225
+     },
+     {
+      "id": "na17",
+      "found": false,
+      "sure": false,
+      "confidence": -4.7604875564575195
+     },
+     {
+      "id": "na18",
+      "found": false,
+      "sure": false,
+      "confidence": -6.8354387283325195
+     },
+     {
+      "id": "na19",
+      "found": false,
+      "sure": false,
+      "confidence": -5.747959613800049
+     },
+     {
+      "id": "na20",
+      "found": true,
+      "sure": true,
+      "confidence": -1.5133963823318481
+     },
+     {
+      "id": "na21",
+      "found": true,
+      "sure": false,
+      "confidence": -2.7777621746063232
+     },
+     {
+      "id": "na22",
+      "found": false,
+      "sure": false,
+      "confidence": -5.43047571182251
+     },
+     {
+      "id": "na23",
+      "found": true,
+      "sure": false,
+      "confidence": -2.9995791912078857
+     },
+     {
+      "id": "na24",
+      "found": false,
+      "sure": false,
+      "confidence": -5.278336524963379
+     }
+    ]
+   },
+   "confidence": {
+    "kind": "rerank",
+    "floor": -4.0,
+    "sure": -2.0,
+    "answerable": {
+     "sure": 35,
+     "not_sure": 9,
+     "refused": 2,
+     "min": -4.6899285316467285
     },
-    {
-     "id": "en02",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "Employees may carry over a maximum of 10 unused days into the next calendar year; any balance above 10 days is forfeited on 31 March. [1]"
-    },
-    {
-     "id": "en03",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "Employees receive 15 days of sick leave per year at full pay, followed by 10 days at half pay. [1] A medical certificate from a licensed clinic is required for any absence longer than two consecutive days. [1]"
-    },
-    {
-     "id": "en04",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "New employees serve a probation period of 100 days. [1] After probation, the notice period is 30 days for staff and 60 days for managers and above. [1]"
-    },
-    {
-     "id": "en05",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "After passing probation, employees may work remotely up to two days per week, with the written approval of their line manager. [2]"
-    },
-    {
-     "id": "en06",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "Each employee has an annual training budget of 400 KWD, which can be used for courses, certifications and conference tickets related to their role. [1]"
-    },
-    {
-     "id": "en07",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "Directors may fly business class on flights longer than six hours. [1]"
-    },
-    {
-     "id": "en08",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "The hotel limit is 45 KWD per night inside the GCC and 70 KWD per night elsewhere. [1]"
-    },
-    {
-     "id": "en09",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "A daily allowance (per diem) of 25 KWD covers meals and local transport on travel days. [1]"
-    },
-    {
-     "id": "en10",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "Orders to other GCC countries (Saudi Arabia, the UAE, Bahrain, Qatar and Oman) are delivered within five to seven working days through our courier partner. [1]"
-    },
-    {
-     "id": "en11",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "Refunds are issued to the original payment method within 7 working days after we receive and inspect the returned item. [1]"
-    },
-    {
-     "id": "en12",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "الأسئلة الشائعة — فلتر المياه الذكي «فلك بيور ٣٠٠» [1] يأتي جهاز «فلك بيور ٣٠٠» بضمان لمدة سنتين من تاريخ التركيب، ويشمل الضمان المضخة واللوحة الإلكترونية والصمامات. [1]"
-    },
-    {
-     "id": "en13",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "الضوء الأحمر الوامض يعني وجود تسريب محتمل للمياه، وعندها يغلق الجهاز صمام الدخول تلقائياً. [1] أما الضوء الأحمر الثابت فيعني أن الفلتر انتهت صلاحيته ويجب تغييره فوراً. [1]"
-    },
-    {
-     "id": "en14",
-     "found": false,
-     "answer_has_fact": false,
-     "cites_gold": false,
-     "answer": "Not found in the documents."
-    },
-    {
-     "id": "en15",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "يجب الإبلاغ عن فقدان أو سرقة الحاسوب المحمول أو الهاتف الخاص بالعمل خلال ٢٤ ساعة. [1] يقوم فريق تقنية المعلومات بمسح بيانات الجهاز عن بُعد. [1]"
-    },
-    {
-     "id": "ar01",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "ننصح بتغيير فلتر الكربون والفلتر الرسوبي كل ستة أشهر، وتغيير غشاء التناضح العكسي كل سنتين. [1] يرسل تطبيق «فلك» تنبيهاً قبل موعد التغيير بأسبوعين، ويتحول مؤشر الفلتر على الجهاز إلى اللون البرتقالي عندما يقترب موعد التغيير. [1]"
-    },
-    {
-     "id": "ar02",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "نعم، التركيب مجاني داخل مدينة الكويت والمناطق السكنية المجاورة، ويتم خلال ثلاثة أيام عمل من تاريخ الشراء. [1] التركيب خارج هذه المناطق يكلف ١٠ دنانير كويتية. [1]"
-    },
-    {
-     "id": "ar03",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "حمّل تطبيق «فلك» من متجر التطبيقات، ثم فعّل البلوتوث في هاتفك، واضغط مطولاً على زر التشغيل في الجهاز لمدة خمس ثوانٍ حتى يومض الضوء الأزرق. [1] يرسل تطبيق «فلك» تنبيهاً قبل موعد التغيير بأسبوعين، ويتحول مؤشر الفلتر على الجهاز إلى اللون البرتقالي عندما يقترب موعد التغيير. [3]"
-    },
-    {
-     "id": "ar04",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "نعم، يوفّر اشتراك «فلك كير» توصيل الفلاتر البديلة إلى منزلك تلقائياً مع زيارة فني لتركيبها، مقابل ٤ دنانير كويتية شهرياً. [1]"
-    },
-    {
-     "id": "ar05",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "يمكن إرجاع الجهاز خلال ١٤ يوماً من تاريخ الشراء بشرط أن يكون غير مُركّب وفي عبوته الأصلية. [1]"
-    },
-    {
-     "id": "ar06",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "خدمة العملاء متاحة من السبت إلى الخميس من الساعة التاسعة صباحاً حتى التاسعة مساءً على الرقم المجاني الموجود في التطبيق، وعبر المحادثة داخل التطبيق. [1]"
-    },
-    {
-     "id": "ar07",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "يستهلك الجهاز نحو ٣٦ واط أثناء التشغيل. [1]"
-    },
-    {
-     "id": "ar08",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "إذا وصلتك رسالة مشبوهة فلا تضغط على أي رابط ولا تفتح المرفقات، وأبلغ عنها خلال ساعة واحدة باستخدام زر «الإبلاغ عن تصيّد» في البريد الإلكتروني أو بإرسالها إلى فريق أمن المعلومات. [1]"
-    },
-    {
-     "id": "ar09",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "يجب قفل شاشة الحاسوب عند مغادرة المكتب ولو لدقائق، وعدم ترك أي مستندات مطبوعة مصنّفة «سري» على المكتب في نهاية اليوم. [1] يُمنع استخدام وحدات التخزين المحمولة (USB) على أجهزة الشركة، وتُعطَّل منافذها تلقائياً. [2]"
-    },
-    {
-     "id": "ar10",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "تُصنّف بيانات الشركة في أربعة مستويات: «عام» و«داخلي» و«سري» و«سري للغاية». [1]"
-    },
-    {
-     "id": "ar11",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "التحقق بخطوتين إلزامي لجميع حسابات البريد الإلكتروني والأنظمة الداخلية. [1]"
-    },
-    {
-     "id": "ar12",
-     "found": true,
-     "answer_has_fact": false,
-     "cites_gold": true,
-     "answer": "Employees who work on a public holiday at their manager's request receive a replacement day off, to be taken within 60 days. [1] Employees receive 15 days of sick leave per year at full pay, followed by 10 days at half pay. [2]"
-    },
-    {
-     "id": "ar13",
-     "found": true,
-     "answer_has_fact": false,
-     "cites_gold": true,
-     "answer": "Family and special leave [1] Fathers receive 5 working days of paternity leave, to be taken within the first month after the birth. [1]"
-    },
-    {
-     "id": "ar14",
-     "found": true,
-     "answer_has_fact": true,
-     "cites_gold": true,
-     "answer": "Office hours are 8:00 to 16:00, with a one-hour lunch break, for a total of 35 working hours per week. [1] During the holy month of Ramadan, working hours are reduced to six hours per day, from 9:00 to 15:00. [1]"
-    },
-    {
-     "id": "ar15",
-     "found": true,
-     "answer_has_fact": false,
-     "cites_gold": false,
-     "answer": "يمكن إرجاع الجهاز خلال ١٤ يوماً من تاريخ الشراء بشرط أن يكون غير مُركّب وفي عبوته الأصلية. [2]"
+    "unanswerable": {
+     "sure": 2,
+     "not_sure": 4,
+     "refused": 18,
+     "max": 0.8212403655052185
     }
-   ],
-   "unanswerable_rows": [
-    {
-     "id": "na01",
-     "abstained": true
+   }
+  },
+  "Extractive, translate + rerank": {
+   "questions": {
+    "answered": 1.0,
+    "answered_sure": 1.0,
+    "answer_has_fact": 1.0,
+    "cites_gold": 1.0,
+    "rows": [
+     {
+      "id": "en01",
+      "found": true,
+      "sure": true,
+      "confidence": 6.865043640136719,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Every full-time employee is entitled to 30 calendar days of paid annual leave per year. [1] Muslim employees may take 21 days of paid Hajj leave once during their employment, after completing two years of service. [3]"
+     },
+     {
+      "id": "en02",
+      "found": true,
+      "sure": true,
+      "confidence": 5.910679340362549,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Employees may carry over a maximum of 10 unused days into the next calendar year; any balance above 10 days is forfeited on 31 March. [1]"
+     },
+     {
+      "id": "en03",
+      "found": true,
+      "sure": true,
+      "confidence": 0.5749428272247314,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Employees receive 15 days of sick leave per year at full pay, followed by 10 days at half pay. [1] A medical certificate from a licensed clinic is required for any absence longer than two consecutive days. [1]"
+     },
+     {
+      "id": "en04",
+      "found": true,
+      "sure": true,
+      "confidence": 0.11848464608192444,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "New employees serve a probation period of 100 days. [1] After probation, the notice period is 30 days for staff and 60 days for managers and above. [1]"
+     },
+     {
+      "id": "en05",
+      "found": true,
+      "sure": true,
+      "confidence": -1.1818854808807373,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "After passing probation, employees may work remotely up to two days per week, with the written approval of their line manager. [2]"
+     },
+     {
+      "id": "en06",
+      "found": true,
+      "sure": true,
+      "confidence": 4.903573989868164,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Each employee has an annual training budget of 400 KWD, which can be used for courses, certifications and conference tickets related to their role. [1]"
+     },
+     {
+      "id": "en07",
+      "found": true,
+      "sure": true,
+      "confidence": 2.6036062240600586,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Directors may fly business class on flights longer than six hours. [1]"
+     },
+     {
+      "id": "en08",
+      "found": true,
+      "sure": true,
+      "confidence": 5.8314528465271,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "The hotel limit is 45 KWD per night inside the GCC and 70 KWD per night elsewhere. [1]"
+     },
+     {
+      "id": "en09",
+      "found": true,
+      "sure": true,
+      "confidence": 1.2844442129135132,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "A daily allowance (per diem) of 25 KWD covers meals and local transport on travel days. [1]"
+     },
+     {
+      "id": "en10",
+      "found": true,
+      "sure": true,
+      "confidence": -0.8304800391197205,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Orders to other GCC countries (Saudi Arabia, the UAE, Bahrain, Qatar and Oman) are delivered within five to seven working days through our courier partner. [1]"
+     },
+     {
+      "id": "en11",
+      "found": true,
+      "sure": true,
+      "confidence": 1.06172513961792,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Refunds are issued to the original payment method within 7 working days after we receive and inspect the returned item. [1]"
+     },
+     {
+      "id": "en12",
+      "found": true,
+      "sure": true,
+      "confidence": 5.3440775871276855,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "يأتي جهاز «فلك بيور ٣٠٠» بضمان لمدة سنتين من تاريخ التركيب، ويشمل الضمان المضخة واللوحة الإلكترونية والصمامات. [1] Installed water filters and opened filter cartridges cannot be returned for hygiene reasons, unless they are faulty. [3]"
+     },
+     {
+      "id": "en13",
+      "found": true,
+      "sure": true,
+      "confidence": 2.3391077518463135,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "الضوء الأحمر الوامض يعني وجود تسريب محتمل للمياه، وعندها يغلق الجهاز صمام الدخول تلقائياً. [1]"
+     },
+     {
+      "id": "en14",
+      "found": true,
+      "sure": true,
+      "confidence": 0.30119946599006653,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "يجب ألا يقل طول كلمة المرور عن ١٤ حرفاً، وأن تتضمن حروفاً وأرقاماً. [1] لا يجوز استخدام كلمة مرور العمل في أي موقع أو خدمة شخصية. [1]"
+     },
+     {
+      "id": "en15",
+      "found": true,
+      "sure": true,
+      "confidence": 2.6576952934265137,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "يجب الإبلاغ عن فقدان أو سرقة الحاسوب المحمول أو الهاتف الخاص بالعمل خلال ٢٤ ساعة. [1] عند العمل من خارج المكتب يجب الاتصال بالأنظمة الداخلية عبر الشبكة الافتراضية الخاصة (VPN) للشركة فقط. [1]"
+     },
+     {
+      "id": "ar01",
+      "found": true,
+      "sure": true,
+      "confidence": 4.191682815551758,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "ننصح بتغيير فلتر الكربون والفلتر الرسوبي كل ستة أشهر، وتغيير غشاء التناضح العكسي كل سنتين. [1] يرسل تطبيق «فلك» تنبيهاً قبل موعد التغيير بأسبوعين، ويتحول مؤشر الفلتر على الجهاز إلى اللون البرتقالي عندما يقترب موعد التغيير. [1]"
+     },
+     {
+      "id": "ar02",
+      "found": true,
+      "sure": true,
+      "confidence": 6.933013916015625,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "نعم، التركيب مجاني داخل مدينة الكويت والمناطق السكنية المجاورة، ويتم خلال ثلاثة أيام عمل من تاريخ الشراء. [1] التركيب خارج هذه المناطق يكلف ١٠ دنانير كويتية. [1]"
+     },
+     {
+      "id": "ar03",
+      "found": true,
+      "sure": true,
+      "confidence": 10.37617015838623,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "حمّل تطبيق «فلك» من متجر التطبيقات، ثم فعّل البلوتوث في هاتفك، واضغط مطولاً على زر التشغيل في الجهاز لمدة خمس ثوانٍ حتى يومض الضوء الأزرق. [1] يرسل تطبيق «فلك» تنبيهاً قبل موعد التغيير بأسبوعين، ويتحول مؤشر الفلتر على الجهاز إلى اللون البرتقالي عندما يقترب موعد التغيير. [3]"
+     },
+     {
+      "id": "ar04",
+      "found": true,
+      "sure": true,
+      "confidence": 1.4480884075164795,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "نعم، يوفّر اشتراك «فلك كير» توصيل الفلاتر البديلة إلى منزلك تلقائياً مع زيارة فني لتركيبها، مقابل ٤ دنانير كويتية شهرياً. [1]"
+     },
+     {
+      "id": "ar05",
+      "found": true,
+      "sure": true,
+      "confidence": 0.6263430714607239,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "يمكن إرجاع الجهاز خلال ١٤ يوماً من تاريخ الشراء بشرط أن يكون غير مُركّب وفي عبوته الأصلية. [1]"
+     },
+     {
+      "id": "ar06",
+      "found": true,
+      "sure": true,
+      "confidence": 1.5485670566558838,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "خدمة العملاء متاحة من السبت إلى الخميس من الساعة التاسعة صباحاً حتى التاسعة مساءً على الرقم المجاني الموجود في التطبيق، وعبر المحادثة داخل التطبيق. [1]"
+     },
+     {
+      "id": "ar07",
+      "found": true,
+      "sure": true,
+      "confidence": 1.0397121906280518,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "يستهلك الجهاز نحو ٣٦ واط أثناء التشغيل. [1] أغلق محبس المياه الرئيسي وافصل الجهاز عن الكهرباء، ثم تواصل مع خدمة العملاء. [2]"
+     },
+     {
+      "id": "ar08",
+      "found": true,
+      "sure": true,
+      "confidence": 2.452788829803467,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "إذا وصلتك رسالة مشبوهة فلا تضغط على أي رابط ولا تفتح المرفقات، وأبلغ عنها خلال ساعة واحدة باستخدام زر «الإبلاغ عن تصيّد» في البريد الإلكتروني أو بإرسالها إلى فريق أمن المعلومات. [1]"
+     },
+     {
+      "id": "ar09",
+      "found": true,
+      "sure": true,
+      "confidence": 0.9449928402900696,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "يجب قفل شاشة الحاسوب عند مغادرة المكتب ولو لدقائق، وعدم ترك أي مستندات مطبوعة مصنّفة «سري» على المكتب في نهاية اليوم. [1] يُمنع استخدام وحدات التخزين المحمولة (USB) على أجهزة الشركة، وتُعطَّل منافذها تلقائياً. [3]"
+     },
+     {
+      "id": "ar10",
+      "found": true,
+      "sure": true,
+      "confidence": 4.258762359619141,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "تُصنّف بيانات الشركة في أربعة مستويات: «عام» و«داخلي» و«سري» و«سري للغاية». [1]"
+     },
+     {
+      "id": "ar11",
+      "found": true,
+      "sure": true,
+      "confidence": 1.8231964111328125,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "التحقق بخطوتين إلزامي لجميع حسابات البريد الإلكتروني والأنظمة الداخلية. [1]"
+     },
+     {
+      "id": "ar12",
+      "found": true,
+      "sure": true,
+      "confidence": 6.865043640136719,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Every full-time employee is entitled to 30 calendar days of paid annual leave per year. [1] Muslim employees may take 21 days of paid Hajj leave once during their employment, after completing two years of service. [3]"
+     },
+     {
+      "id": "ar13",
+      "found": true,
+      "sure": true,
+      "confidence": -0.5442361235618591,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Female employees are entitled to 70 days of maternity leave at full pay. [1]"
+     },
+     {
+      "id": "ar14",
+      "found": true,
+      "sure": true,
+      "confidence": 2.6389667987823486,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "During the holy month of Ramadan, working hours are reduced to six hours per day, from 9:00 to 15:00. [1]"
+     },
+     {
+      "id": "ar15",
+      "found": true,
+      "sure": true,
+      "confidence": 7.23463249206543,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Unused products in their original packaging can be returned within 14 days of delivery. [1] يمكن إرجاع الجهاز خلال ١٤ يوماً من تاريخ الشراء بشرط أن يكون غير مُركّب وفي عبوته الأصلية. [2]"
+     }
+    ]
+   },
+   "natural": {
+    "answered": 1.0,
+    "answered_sure": 0.625,
+    "answer_has_fact": 0.6875,
+    "cites_gold": 0.8125,
+    "rows": [
+     {
+      "id": "xl01",
+      "found": true,
+      "sure": false,
+      "confidence": -2.7008779048919678,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Female employees are entitled to 70 days of maternity leave at full pay. [1] Fathers receive 5 working days of paternity leave, to be taken within the first month after the birth. [1]"
+     },
+     {
+      "id": "xl02",
+      "found": true,
+      "sure": false,
+      "confidence": -2.579899787902832,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "In the event of the death of a close relative, employees may take 3 days of bereavement leave. [3] Muslim employees may take 21 days of paid Hajj leave once during their employment, after completing two years of service. [3]"
+     },
+     {
+      "id": "xl03",
+      "found": true,
+      "sure": true,
+      "confidence": 0.02006218209862709,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Employees who work on a public holiday at their manager's request receive a replacement day off, to be taken within 60 days. [1] Every full-time employee is entitled to 30 calendar days of paid annual leave per year. [1]"
+     },
+     {
+      "id": "xl04",
+      "found": true,
+      "sure": true,
+      "confidence": -0.2964845299720764,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Employees receive 15 days of sick leave per year at full pay, followed by 10 days at half pay. [1]"
+     },
+     {
+      "id": "xl05",
+      "found": true,
+      "sure": false,
+      "confidence": -3.090507984161377,
+      "answer_has_fact": false,
+      "cites_gold": false,
+      "answer": "To start a return, open the order in the app and choose \"Return item\"; a courier will collect it within three working days. [1]"
+     },
+     {
+      "id": "xl06",
+      "found": true,
+      "sure": true,
+      "confidence": -1.6435710191726685,
+      "answer_has_fact": false,
+      "cites_gold": false,
+      "answer": "Falak Home Systems — Employee Handbook (2026 edition) [3] Employees who work on a public holiday at their manager's request receive a replacement day off, to be taken within 60 days. [3]"
+     },
+     {
+      "id": "xl07",
+      "found": true,
+      "sure": false,
+      "confidence": -3.4300308227539062,
+      "answer_has_fact": false,
+      "cites_gold": true,
+      "answer": "After probation, the notice period is 30 days for staff and 60 days for managers and above. [1] After passing probation, employees may work remotely up to two days per week, with the written approval of their line manager. [1]"
+     },
+     {
+      "id": "xl08",
+      "found": true,
+      "sure": true,
+      "confidence": 1.221725583076477,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "A daily allowance (per diem) of 25 KWD covers meals and local transport on travel days. [1]"
+     },
+     {
+      "id": "xl09",
+      "found": true,
+      "sure": false,
+      "confidence": -2.6868374347686768,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Refunds are issued to the original payment method within 7 working days after we receive and inspect the returned item. [1] KNET refunds may take an additional two to three days to appear, depending on your bank. [1]"
+     },
+     {
+      "id": "xl10",
+      "found": true,
+      "sure": true,
+      "confidence": -0.4251924157142639,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "Each employee has an annual training budget of 400 KWD, which can be used for courses, certifications and conference tickets related to their role. [1]"
+     },
+     {
+      "id": "xl11",
+      "found": true,
+      "sure": true,
+      "confidence": 1.431464433670044,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "أما الضوء الأحمر الثابت فيعني أن الفلتر انتهت صلاحيته ويجب تغييره فوراً. [1] الضوء الأحمر الوامض يعني وجود تسريب محتمل للمياه، وعندها يغلق الجهاز صمام الدخول تلقائياً. [2]"
+     },
+     {
+      "id": "xl12",
+      "found": true,
+      "sure": true,
+      "confidence": -0.7323693633079529,
+      "answer_has_fact": false,
+      "cites_gold": true,
+      "answer": "نوصي باستخدام مدير كلمات المرور المعتمد من الشركة. [1] After passing probation, employees may work remotely up to two days per week, with the written approval of their line manager. [3]"
+     },
+     {
+      "id": "xl13",
+      "found": true,
+      "sure": false,
+      "confidence": -3.2955830097198486,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "نعم، يوفّر اشتراك «فلك كير» توصيل الفلاتر البديلة إلى منزلك تلقائياً مع زيارة فني لتركيبها، مقابل ٤ دنانير كويتية شهرياً. [3] يمكن إلغاء الاشتراك في أي وقت من التطبيق دون رسوم إلغاء، ويُطبّق الإلغاء من بداية الشهر التالي. [3]"
+     },
+     {
+      "id": "xl14",
+      "found": true,
+      "sure": true,
+      "confidence": 4.31012487411499,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "ننصح بتغيير فلتر الكربون والفلتر الرسوبي كل ستة أشهر، وتغيير غشاء التناضح العكسي كل سنتين. [1]"
+     },
+     {
+      "id": "xl15",
+      "found": true,
+      "sure": true,
+      "confidence": 0.19900768995285034,
+      "answer_has_fact": false,
+      "cites_gold": false,
+      "answer": "يجب قفل شاشة الحاسوب عند مغادرة المكتب ولو لدقائق، وعدم ترك أي مستندات مطبوعة مصنّفة «سري» على المكتب في نهاية اليوم. [1] يجب الإبلاغ عن فقدان أو سرقة الحاسوب المحمول أو الهاتف الخاص بالعمل خلال ٢٤ ساعة. [3]"
+     },
+     {
+      "id": "xl16",
+      "found": true,
+      "sure": true,
+      "confidence": -1.3984673023223877,
+      "answer_has_fact": true,
+      "cites_gold": true,
+      "answer": "يأتي جهاز «فلك بيور ٣٠٠» بضمان لمدة سنتين من تاريخ التركيب، ويشمل الضمان المضخة واللوحة الإلكترونية والصمامات. [2] لا يشمل الضمان الفلاتر لأنها قطع استهلاكية، ولا يشمل الأضرار الناتجة عن سوء الاستخدام أو التركيب من قِبَل فنيين غير معتمدين. [2]"
+     }
+    ]
+   },
+   "unanswerable": {
+    "refused": 10,
+    "not_sure": 10,
+    "answered_sure": 4,
+    "n": 24,
+    "rows": [
+     {
+      "id": "na01",
+      "found": true,
+      "sure": false,
+      "confidence": -2.926668167114258
+     },
+     {
+      "id": "na02",
+      "found": true,
+      "sure": false,
+      "confidence": -3.428450345993042
+     },
+     {
+      "id": "na03",
+      "found": false,
+      "sure": false,
+      "confidence": -5.837343692779541
+     },
+     {
+      "id": "na04",
+      "found": true,
+      "sure": true,
+      "confidence": -0.4021225571632385
+     },
+     {
+      "id": "na05",
+      "found": true,
+      "sure": false,
+      "confidence": -3.85125994682312
+     },
+     {
+      "id": "na06",
+      "found": false,
+      "sure": false,
+      "confidence": -9.051552772521973
+     },
+     {
+      "id": "na07",
+      "found": false,
+      "sure": false,
+      "confidence": -4.600075721740723
+     },
+     {
+      "id": "na08",
+      "found": true,
+      "sure": false,
+      "confidence": -2.215930461883545
+     },
+     {
+      "id": "na09",
+      "found": false,
+      "sure": false,
+      "confidence": -4.594552993774414
+     },
+     {
+      "id": "na10",
+      "found": true,
+      "sure": false,
+      "confidence": -2.3023736476898193
+     },
+     {
+      "id": "na11",
+      "found": true,
+      "sure": true,
+      "confidence": 0.8212403655052185
+     },
+     {
+      "id": "na12",
+      "found": false,
+      "sure": false,
+      "confidence": -4.376422882080078
+     },
+     {
+      "id": "na13",
+      "found": true,
+      "sure": false,
+      "confidence": -3.9690873622894287
+     },
+     {
+      "id": "na14",
+      "found": true,
+      "sure": false,
+      "confidence": -2.086365222930908
+     },
+     {
+      "id": "na15",
+      "found": false,
+      "sure": false,
+      "confidence": -6.943881034851074
+     },
+     {
+      "id": "na16",
+      "found": true,
+      "sure": false,
+      "confidence": -3.3025052547454834
+     },
+     {
+      "id": "na17",
+      "found": false,
+      "sure": false,
+      "confidence": -4.58905029296875
+     },
+     {
+      "id": "na18",
+      "found": false,
+      "sure": false,
+      "confidence": -4.773024082183838
+     },
+     {
+      "id": "na19",
+      "found": true,
+      "sure": false,
+      "confidence": -3.3688409328460693
+     },
+     {
+      "id": "na20",
+      "found": true,
+      "sure": true,
+      "confidence": -1.5133963823318481
+     },
+     {
+      "id": "na21",
+      "found": true,
+      "sure": false,
+      "confidence": -2.7777624130249023
+     },
+     {
+      "id": "na22",
+      "found": false,
+      "sure": false,
+      "confidence": -5.093088626861572
+     },
+     {
+      "id": "na23",
+      "found": true,
+      "sure": true,
+      "confidence": -1.782386302947998
+     },
+     {
+      "id": "na24",
+      "found": false,
+      "sure": false,
+      "confidence": -4.925459861755371
+     }
+    ]
+   },
+   "confidence": {
+    "kind": "rerank",
+    "floor": -4.0,
+    "sure": -2.0,
+    "answerable": {
+     "sure": 40,
+     "not_sure": 6,
+     "refused": 0,
+     "min": -3.4300308227539062
     },
-    {
-     "id": "na02",
-     "abstained": true
-    },
-    {
-     "id": "na03",
-     "abstained": true
-    },
-    {
-     "id": "na04",
-     "abstained": true
+    "unanswerable": {
+     "sure": 4,
+     "not_sure": 10,
+     "refused": 10,
+     "max": 0.8212403655052185
     }
-   ]
+   }
   }
  }
 }

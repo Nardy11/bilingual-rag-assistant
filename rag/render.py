@@ -11,15 +11,26 @@ from html import escape
 from .normalize import detect_language
 from .pipeline import Answer
 
+NOT_SURE = {
+    "en": "Not sure this answers it. The closest passage in the documents says:",
+    "ar": "لست متأكداً أن هذا يجيب عن سؤالك. أقرب ما وجدته في المستندات:",
+}
+
 
 def _dir(text: str) -> str:
     return "rtl" if detect_language(text) == "ar" else "ltr"
 
 
 def render_answer(a: Answer) -> str:
+    note = ""
+    if a.found and not a.sure:
+        ql = detect_language(a.question)
+        note = f'<p dir="{_dir(NOT_SURE[ql])}" style="opacity:.8"><em>{escape(NOT_SURE[ql])}</em></p>'
+    via = f" · searched as: {escape(a.translated_query)}" if a.translated_query else ""
     return (
-        f'<div dir="{_dir(a.answer)}" style="font-size:1.1em">{escape(a.answer)}</div>'
-        f'<p style="opacity:.7" dir="ltr">confidence {a.confidence:.3f} · generator: {escape(a.generator)}</p>'
+        note + f'<div dir="{_dir(a.answer)}" style="font-size:1.1em">{escape(a.answer)}</div>'
+        f'<p style="opacity:.7" dir="ltr">{escape(a.confidence_kind)} score {a.confidence:.3f}'
+        f" · generator: {escape(a.generator)}{via}</p>"
     )
 
 

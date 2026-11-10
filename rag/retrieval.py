@@ -33,6 +33,23 @@ def rrf(rankings: list[list[int]], k: int = RRF_K) -> dict[int, float]:
     return scores
 
 
+def fuse_hits(lists: list[list[Hit]], k: int, rrf_k: int = RRF_K) -> list[Hit]:
+    """RRF over several hit lists (e.g. the question and its translation), keyed by chunk id.
+
+    The fused hit keeps the best cosine any of the queries reached, for the no-reranker confidence.
+    """
+    scores: dict[str, float] = {}
+    best: dict[str, Hit] = {}
+    for hits in lists:
+        for rank, h in enumerate(hits, start=1):
+            cid = h.chunk.id
+            scores[cid] = scores.get(cid, 0.0) + 1.0 / (rrf_k + rank)
+            if cid not in best or h.dense > best[cid].dense:
+                best[cid] = h
+    order = sorted(scores, key=scores.get, reverse=True)[:k]
+    return [Hit(best[c].chunk, scores[c], best[c].dense) for c in order]
+
+
 class HybridIndex:
     def __init__(self, embedder: Embedder):
         self.embedder = embedder
