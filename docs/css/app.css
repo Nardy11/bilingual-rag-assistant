@@ -105,7 +105,15 @@ button { cursor: pointer; }
   border-bottom: 1px solid var(--line);
 }
 .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; white-space: nowrap; }
-.mark { width: 28px; height: 28px; flex: none; filter: drop-shadow(0 2px 6px rgb(91 92 250 / 0.28)); }
+.mark { width: 30px; height: 30px; flex: none; filter: drop-shadow(0 2px 6px rgb(91 92 250 / 0.28)); }
+/* the bot blinks now and then, and its antenna pulses while a model is loading */
+.mark-eyes { transform-box: fill-box; transform-origin: center; animation: blink 6s infinite; }
+@keyframes blink { 0%, 94%, 100% { transform: scaleY(1); } 96% { transform: scaleY(0.1); } }
+.mark-ping { transform-box: fill-box; transform-origin: center; }
+.bar:has(#mode:not([data-state]), #mode[data-state="loading"]) .mark-ping { animation: ping 1.2s ease-in-out infinite; }
+@keyframes ping { 50% { transform: scale(1.35); opacity: 0.55; } }
+.brand:hover .mark-eyes { animation: blink 0.5s 1; }
+@media (prefers-reduced-motion: reduce) { .mark-eyes, .mark-ping, .bar .mark-ping { animation: none !important; } }
 .brand-name { font: 700 17px/1 var(--display); font-variation-settings: "opsz" 32; letter-spacing: -0.03em; }
 .brand-ar { color: var(--muted); font-size: 14px; }
 
