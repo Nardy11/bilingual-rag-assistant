@@ -473,6 +473,8 @@ details.prompt pre { white-space: pre-wrap; background: var(--code-bg); border: 
 .idea .idea-t { display: block; margin-bottom: 2px; color: var(--d); }
 .tour-tools { display: flex; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; }
 .tour-tools a { font-size: 13px; }
+.tour-links { display: flex; gap: 16px; align-items: center; font-size: 13px; }
+.tour-links .check { margin: 0; font-size: 13px; }
 .annot { border: 1px solid var(--line); border-radius: var(--r-box); overflow: hidden; background: var(--surface); }
 .arow { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); border-top: 1px solid var(--line); }
 .arow:first-child { border-top: 0; }

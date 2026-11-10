@@ -91,6 +91,59 @@ function noteHtml(note) {
     .join("");
 }
 
+// Comments and docstrings are hidden by default: the note next to each block already says what
+// they say. Line numbers keep their original values, so "L12" in a note still points at line 12.
+let showComments = false;
+
+// 1-based numbers of lines that are only a comment (# or //) or part of a Python docstring
+function commentLines(src, lang) {
+  const hidden = new Set();
+  let inDoc = null;
+  src.split("\n").forEach((line, i) => {
+    const t = line.trim();
+    if (inDoc) {
+      hidden.add(i + 1);
+      if (t.includes(inDoc)) inDoc = null;
+      return;
+    }
+    if (lang === "python") {
+      const q = t.match(/^[rRbBuU]?("""|''')/);
+      if (q) {
+        hidden.add(i + 1);
+        if (!t.slice(q[0].length).includes(q[1])) inDoc = q[1];
+        return;
+      }
+      if (t.startsWith("#")) hidden.add(i + 1);
+    } else if (t.startsWith("//") || t.startsWith("/*") || t.startsWith("*")) {
+      hidden.add(i + 1);
+    }
+  });
+  return hidden;
+}
+
+// cut a trailing comment off a highlighted line, closing any span still open at the cut
+function dropTrailingComment(html) {
+  const at = html.indexOf('<span class="hljs-comment">');
+  if (at < 0) return html;
+  const head = html.slice(0, at);
+  const open = (head.match(/<span/g) || []).length - (head.match(/<\/span>/g) || []).length;
+  return head.replace(/\s+$/, "") + "</span>".repeat(Math.max(0, open));
+}
+
+function rowLines(b, lines, hidden) {
+  const rows = [];
+  for (let n = b.from; n <= b.to; n++) {
+    if (!showComments && hidden.has(n)) continue;
+    rows.push({ n, html: showComments ? lines[n - 1] : dropTrailingComment(lines[n - 1]) });
+  }
+  if (!showComments) {
+    const blank = (r) => !r.html.replace(/<[^>]+>/g, "").trim();
+    while (rows.length && blank(rows[0])) rows.shift();
+    while (rows.length && blank(rows[rows.length - 1])) rows.pop();
+  }
+  return rows;
+}
+
 async function renderFile(path) {
   const meta = manifest.files[path];
   const main = $("#tour-main");
@@ -101,7 +154,10 @@ async function renderFile(path) {
   }
   const { src, notes } = cache.get(path);
   const lines = highlight(src, meta.lang);
-  const blocks = notes?.blocks?.length ? notes.blocks : [{ from: 1, to: lines.length, note: "Notes for this file are being written." }];
+  const hidden = commentLines(src, meta.lang);
+  const blocks = (notes?.blocks?.length ? notes.blocks : [{ from: 1, to: lines.length, note: "Notes for this file are being written." }])
+    .map((b) => ({ ...b, rows: rowLines(b, lines, hidden) }))
+    .filter((b) => b.rows.length);
   const all = manifest.order;
   const i = all.indexOf(path);
   const prev = all[i - 1];
@@ -114,19 +170,24 @@ async function renderFile(path) {
       ${notes?.key_ideas?.length ? `<div class="ideas">${notes.key_ideas.map((k) => `<div class="idea"><b class="idea-t">${esc(k.term)}</b>${noteHtml(k.explain).replace(/<\/?p>/g, "")}</div>`).join("")}</div>` : ""}
     </header>
     <div class="tour-tools"><span class="muted">${lines.length} lines · ${blocks.length} notes</span>
-      <a href="${esc(meta.github)}" target="_blank" rel="noopener">Open on GitHub</a></div>
+      <span class="tour-links"><label class="check"><input type="checkbox" id="show-comments" ${showComments ? "checked" : ""}><span>Show comments</span></label>
+      <a href="${esc(meta.github)}" target="_blank" rel="noopener">Open on GitHub</a></span></div>
     <div class="annot">${blocks
       .map(
-        (b) => `<div class="arow" id="L${b.from}" tabindex="-1"><pre class="acode"><code>${lines
-          .slice(b.from - 1, b.to)
-          .map((l, j) => `<span class="ln" data-n="${b.from + j}">${l || " "}</span>`)
-          .join("")}</code></pre><div class="anote">${noteHtml(b.note)}</div></div>`,
+        (b) => `<div class="arow" id="L${b.from}" tabindex="-1"><pre class="acode"><code>${b.rows
+          .map((r) => `<span class="ln" data-n="${r.n}">${r.html || " "}</span>`)
+          .join("")}</code></pre><div class="anote">${noteHtml(showComments ? b.note : b.note.split("\n").filter((l) => !/^L\d+.{0,12}:\s*blank( lines?)?\.?$/i.test(l.trim())).join("\n"))}</div></div>`,
       )
       .join("")}</div>
     <nav class="tour-pager" aria-label="Next and previous file">
       ${prev ? `<a href="#code/${prev}"><small>Previous</small><b>${esc(prev)}</b></a>` : "<span></span>"}
       ${next ? `<a href="#code/${next}" style="text-align:right"><small>Next</small><b>${esc(next)}</b></a>` : ""}
     </nav>`;
+  $("#show-comments").addEventListener("change", (e) => {
+    showComments = e.target.checked;
+    const y = window.scrollY;
+    renderFile(path).then(() => window.scrollTo({ top: y }));
+  });
   main.querySelector(".annot").addEventListener("click", (e) => {
     const row = e.target.closest(".arow");
     if (!row) return;
