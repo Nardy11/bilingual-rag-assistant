@@ -4,50 +4,193 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bilingual RAG Assistant</title>
-<meta name="description" content="Ask questions in Arabic or English about a set of documents. Hybrid search (embeddings + BM25), Arabic-English query translation, re-ranking and cited answers, running entirely in your browser.">
+<meta name="description" content="Ask questions in Arabic or English about your own documents. Upload PDFs, watch every retrieval step, see the cited passages, and read the code line by line. Runs in your browser.">
+<meta name="color-scheme" content="light dark">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%230d6b5c%27/%3E%3Cpath d=%27M9 9h14M9 15h14M9 21h9%27 stroke=%27white%27 stroke-width=%273%27 stroke-linecap=%27round%27/%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Schibsted+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Unbounded:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<link rel="stylesheet" href="css/app.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='12' cy='16' r='9' fill='%235b7cfa'/%3E%3Ccircle cx='20' cy='16' r='9' fill='%239a6bff' fill-opacity='.85'/%3E%3C/svg%3E">
+<script>
+  // apply the saved theme before first paint, so the page never flashes the wrong one
+  try { const t = JSON.parse(localStorage.getItem("rag.prefs.v1") || "{}").theme; if (t) document.documentElement.dataset.theme = t; } catch {}
+</script>
 </head>
 <body>
-<main class="wrap">
-  <header class="top">
-    <div>
-      <h1>Bilingual RAG Assistant <span class="ar-title" lang="ar" dir="rtl">مساعد المستندات</span></h1>
-      <p class="lede">Ask in <b>Arabic or English</b> about the documents of Falak Home Systems, a fictional company: HR handbook, travel policy, shipping terms, IT security policy and a product FAQ. Search and answers run <b>entirely in your browser</b>, with no server and no API key. Answers come within a second; the translation and re-ranking models (about 340 MB) then load in the background for better cross-language answers (about 3 s each).</p>
-    </div>
-    <a class="gh" href="https://github.com/Nardy11/bilingual-rag-assistant">Source on GitHub</a>
-  </header>
+<a class="skip" href="#main">Skip to content</a>
 
-  <form id="ask" class="ask" autocomplete="off">
-    <input id="q" name="q" type="search" dir="auto" placeholder="How many days of annual leave do I get?  /  متى يجب تغيير فلتر الكربون؟" aria-label="Your question">
-    <button id="go" type="submit" disabled>Ask</button>
-  </form>
-
-  <div class="examples" aria-label="Example questions">
-    <button type="button" class="chip" dir="ltr">How many days a week can I work from home?</button>
-    <button type="button" class="chip" dir="ltr">What does a flashing red light on the filter mean?</button>
-    <button type="button" class="chip" dir="ltr">What is the hotel limit per night in the GCC?</button>
-    <button type="button" class="chip" dir="rtl" lang="ar">متى يجب تغيير فلتر الكربون؟</button>
-    <button type="button" class="chip" dir="rtl" lang="ar">هل عندنا إجازة الأمومة؟</button>
-    <button type="button" class="chip" dir="rtl" lang="ar">هل يمكنني استخدام فلاشة USB على حاسوب العمل؟</button>
+<header class="bar">
+  <a class="brand" href="#ask" aria-label="Bilingual RAG Assistant, home">
+    <span class="mark" aria-hidden="true"><i></i><i></i></span>
+    <span class="brand-name">Bilingual RAG</span>
+    <span class="brand-ar" lang="ar" dir="rtl">مساعد المستندات</span>
+  </a>
+  <nav class="tabs" aria-label="Sections">
+    <a href="#ask" data-view="ask"><i class="ph ph-chat-circle-text" aria-hidden="true"></i><span>Ask</span></a>
+    <a href="#documents" data-view="documents"><i class="ph ph-files" aria-hidden="true"></i><span>Documents</span></a>
+    <a href="#history" data-view="history"><i class="ph ph-clock-counter-clockwise" aria-hidden="true"></i><span>History</span></a>
+    <a href="#code" data-view="code"><i class="ph ph-code" aria-hidden="true"></i><span>Code tour</span></a>
+  </nav>
+  <div class="bar-end">
+    <button type="button" class="pill mode" id="mode" aria-live="polite"><span class="mode-dot" aria-hidden="true"></span><span id="mode-text">Loading model</span></button>
+    <button type="button" class="pill" id="llm-open"><i class="ph ph-key" aria-hidden="true"></i><span id="llm-label">Add LLM key</span></button>
+    <button type="button" class="icon-btn" id="theme" aria-label="Switch light or dark theme"><i class="ph ph-moon-stars" aria-hidden="true"></i></button>
+    <a class="icon-btn" href="https://github.com/Nardy11/bilingual-rag-assistant" aria-label="Source on GitHub"><i class="ph ph-github-logo" aria-hidden="true"></i></a>
   </div>
+</header>
 
-  <p id="status" class="status" role="status">Loading the multilingual embedding model (about 120 MB, cached after the first visit)…</p>
+<p class="loadline" id="status" role="status">Loading the multilingual embedding model (about 120 MB, saved by your browser after the first visit)…</p>
 
-  <section id="result" class="result" hidden>
-    <article class="answer" id="answer"></article>
-    <h2 class="sources-h">Retrieved passages <span class="muted">hybrid search: embeddings + BM25 for the question and its translation, fused with reciprocal rank fusion, then re-ranked by a cross-encoder</span></h2>
-    <ol id="sources" class="sources"></ol>
+<main id="main">
+  <!-- ============ ASK ============ -->
+  <section class="view" id="view-ask" data-view="ask" aria-labelledby="ask-h">
+    <div class="ask-grid">
+      <div class="ask-main">
+        <h1 id="ask-h" class="title">Ask your documents, <span class="title-soft">in Arabic or English.</span></h1>
+        <p class="lede">Search runs in this tab. Every answer cites the passages it came from and shows each step that produced it.</p>
+
+        <form id="ask-form" class="composer" autocomplete="off">
+          <label for="q" class="sr-only">Your question</label>
+          <textarea id="q" name="q" rows="2" dir="auto" placeholder="How many days of annual leave do I get?   ·   متى يجب تغيير فلتر الكربون؟"></textarea>
+          <div class="composer-row">
+            <div class="seg" role="radiogroup" aria-label="How to write the answer">
+              <label><input type="radio" name="gen" value="extractive" checked><span>Quote sentences</span></label>
+              <label><input type="radio" name="gen" value="llm"><span id="gen-llm-label">Write with LLM</span></label>
+            </div>
+            <button id="go" class="btn primary" type="submit" disabled><span>Ask</span><i class="ph ph-arrow-right" aria-hidden="true"></i></button>
+          </div>
+        </form>
+
+        <div class="examples" id="examples" aria-label="Example questions">
+          <button type="button" class="chip" dir="ltr">How many days a week can I work from home?</button>
+          <button type="button" class="chip" dir="rtl" lang="ar">هل عندنا إجازة الأمومة؟</button>
+          <button type="button" class="chip" dir="ltr">What does a flashing red light on the filter mean?</button>
+          <button type="button" class="chip" dir="rtl" lang="ar">متى يجب تغيير فلتر الكربون؟</button>
+          <button type="button" class="chip" dir="ltr">What is the hotel limit per night in the GCC?</button>
+          <button type="button" class="chip" dir="rtl" lang="ar">هل يمكنني استخدام فلاشة USB على حاسوب العمل؟</button>
+        </div>
+
+        <div id="result" class="result" hidden>
+          <article class="answer" id="answer" aria-live="polite"></article>
+          <h2 class="h2">Passages it read <span class="h2-note" id="sources-note"></span></h2>
+          <ol id="sources" class="sources"></ol>
+        </div>
+
+        <div id="welcome" class="welcome">
+          <p class="welcome-h">Using your own files</p>
+          <p>Open <a href="#documents">Documents</a> and drop in a PDF, TXT or Markdown file. It is read, split into passages and embedded on your device, then you can ask about it here. Five sample documents of a fictional company, Falak Home Systems, are loaded to start with.</p>
+        </div>
+      </div>
+
+      <aside class="trace" id="trace" aria-labelledby="trace-h">
+        <div class="trace-head">
+          <h2 id="trace-h" class="h2">How the answer was made</h2>
+          <span class="trace-total" id="trace-total"></span>
+        </div>
+        <ol class="rail" id="rail"></ol>
+      </aside>
+    </div>
   </section>
 
-  <footer class="foot">
-    <p>Model: <code>Xenova/multilingual-e5-small</code> (8-bit ONNX) via transformers.js. The document index was precomputed in Python with the same model. This demo uses the extractive answerer: it quotes the best supporting sentences and cites them. The Python service can generate answers with Gemini or any OpenAI-compatible model instead.</p>
-    <p>Sample documents are fictional and written for this project (CC BY 4.0). Code MIT.</p>
-  </footer>
+  <!-- ============ DOCUMENTS ============ -->
+  <section class="view" id="view-documents" data-view="documents" aria-labelledby="docs-h" hidden>
+    <div class="docs-grid">
+      <div class="docs-side">
+        <h1 id="docs-h" class="title sm">Documents</h1>
+        <label class="drop" id="drop" for="file">
+          <input id="file" type="file" accept=".pdf,.txt,.md,.markdown" multiple class="sr-only">
+          <i class="ph ph-upload-simple" aria-hidden="true"></i>
+          <span class="drop-h">Add PDF, TXT or Markdown</span>
+          <span class="drop-sub">Drop files here or choose them. Up to 10 MB each. They stay on this device.</span>
+        </label>
+        <ol class="ingest" id="ingest" hidden></ol>
+        <ul class="doclist" id="doclist"></ul>
+      </div>
+      <div class="reader" id="reader">
+        <div class="reader-empty">
+          <i class="ph ph-book-open-text" aria-hidden="true"></i>
+          <p>Pick a document to read it passage by passage. Passages that answers cited are marked, with the sentences that were quoted.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ HISTORY ============ -->
+  <section class="view" id="view-history" data-view="history" aria-labelledby="hist-h" hidden>
+    <div class="hist-head">
+      <h1 id="hist-h" class="title sm">History</h1>
+      <div class="hist-actions">
+        <button type="button" class="btn ghost" id="hist-export"><i class="ph ph-download-simple" aria-hidden="true"></i><span>Download JSON</span></button>
+        <button type="button" class="btn ghost danger" id="hist-clear"><i class="ph ph-trash" aria-hidden="true"></i><span>Clear history</span></button>
+      </div>
+    </div>
+    <div class="stats" id="stats"></div>
+    <ul class="hist" id="hist"></ul>
+  </section>
+
+  <!-- ============ CODE TOUR ============ -->
+  <section class="view" id="view-code" data-view="code" aria-labelledby="code-h" hidden>
+    <div class="tour-grid">
+      <nav class="tour-nav" id="tour-nav" aria-label="Files"></nav>
+      <div class="tour-main" id="tour-main">
+        <h1 id="code-h" class="title sm">Code tour</h1>
+        <p class="lede">Every line of the project, explained next to the code. Start with the path a question takes, or the path a document takes, and open any file on the left.</p>
+        <div class="paths" id="tour-paths"></div>
+      </div>
+    </div>
+  </section>
 </main>
-<script type="module" src="app.js"></script>
+
+<dialog class="sheet" id="llm-dialog" aria-labelledby="llm-h">
+  <form method="dialog" id="llm-form">
+    <div class="sheet-head">
+      <h2 id="llm-h" class="h2">Write answers with an LLM</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Close"><i class="ph ph-x" aria-hidden="true"></i></button>
+    </div>
+    <p class="sheet-p">Retrieval stays the same. The top five passages and your question go to the model with the same prompt the Python service uses, and it writes a short answer with [n] citations. Without a key, the answer is the best one or two sentences quoted from the passages.</p>
+    <fieldset class="providers">
+      <legend class="label">Provider</legend>
+      <label class="prov"><input type="radio" name="provider" value="gemini" checked><span><b>Google Gemini</b><small>Free tier key from Google AI Studio</small></span></label>
+      <label class="prov"><input type="radio" name="provider" value="openai"><span><b>OpenAI</b><small>Key from platform.openai.com</small></span></label>
+      <label class="prov"><input type="radio" name="provider" value="compatible"><span><b>OpenAI-compatible</b><small>Groq, OpenRouter, a local Ollama…</small></span></label>
+    </fieldset>
+    <div class="field" id="base-field" hidden>
+      <label class="label" for="llm-base">Base URL</label>
+      <input id="llm-base" type="url" placeholder="https://api.groq.com/openai/v1" spellcheck="false">
+    </div>
+    <div class="field">
+      <label class="label" for="llm-model">Model</label>
+      <input id="llm-model" type="text" spellcheck="false">
+    </div>
+    <div class="field">
+      <label class="label" for="llm-key">API key</label>
+      <input id="llm-key" type="password" autocomplete="off" spellcheck="false">
+      <p class="help">Sent only to the provider you chose, directly from this tab. Kept for this tab session unless you tick the box below.</p>
+    </div>
+    <label class="check"><input type="checkbox" id="llm-remember"><span>Remember on this device</span></label>
+    <p class="form-error" id="llm-error" role="alert" hidden></p>
+    <div class="sheet-actions">
+      <button type="button" class="btn ghost danger" id="llm-remove">Remove key</button>
+      <button type="submit" class="btn primary" id="llm-save">Save and use</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="sheet wide" id="passage-dialog" aria-labelledby="passage-h">
+  <div class="sheet-head">
+    <h2 id="passage-h" class="h2">Passage</h2>
+    <button type="button" class="icon-btn" data-close aria-label="Close"><i class="ph ph-x" aria-hidden="true"></i></button>
+  </div>
+  <div id="passage-body"></div>
+</dialog>
+
+<footer class="foot">
+  <p>Embeddings: <code>multilingual-e5-small</code>. Re-ranker: <code>mmarco-mMiniLMv2-L12</code>. Translation: <code>opus-mt</code> ar↔en. All run in the browser with transformers.js. Sample documents are fictional (CC BY 4.0). Code MIT.</p>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha384-F/bZzf7p3Joyp5psL90p/p89AZJsndkSoGwRpXcZhleCWhd8SnRuoYo4d0yirjJp" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script type="module" src="js/app.js"></script>
 </body>
 </html>

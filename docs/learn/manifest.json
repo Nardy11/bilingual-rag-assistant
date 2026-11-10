@@ -1,0 +1,244 @@
+{
+ "groups": [
+  {
+   "title": "Prepare the documents",
+   "files": [
+    "rag/ingest.py",
+    "rag/normalize.py",
+    "rag/chunking.py",
+    "rag/embeddings.py",
+    "rag/retrieval.py"
+   ]
+  },
+  {
+   "title": "Answer a question",
+   "files": [
+    "rag/translate.py",
+    "rag/rerank.py",
+    "rag/generate.py",
+    "rag/pipeline.py"
+   ]
+  },
+  {
+   "title": "Serve it",
+   "files": [
+    "rag/api.py",
+    "rag/render.py",
+    "rag/__main__.py",
+    "rag/__init__.py"
+   ]
+  },
+  {
+   "title": "The browser version",
+   "files": [
+    "scripts/export_web_index.py",
+    "docs/js/text.js",
+    "docs/js/ingest.js",
+    "docs/js/engine.js",
+    "docs/js/llm.js"
+   ]
+  }
+ ],
+ "order": [
+  "rag/ingest.py",
+  "rag/normalize.py",
+  "rag/chunking.py",
+  "rag/embeddings.py",
+  "rag/retrieval.py",
+  "rag/translate.py",
+  "rag/rerank.py",
+  "rag/generate.py",
+  "rag/pipeline.py",
+  "rag/api.py",
+  "rag/render.py",
+  "rag/__main__.py",
+  "rag/__init__.py",
+  "scripts/export_web_index.py",
+  "docs/js/text.js",
+  "docs/js/ingest.js",
+  "docs/js/engine.js",
+  "docs/js/llm.js"
+ ],
+ "files": {
+  "rag/ingest.py": {
+   "src": "learn/src/rag/ingest.py",
+   "notes": "learn/notes/rag__ingest.py.json",
+   "lang": "python",
+   "lines": 85,
+   "github": "https://github.com/Nardy11/bilingual-rag-assistant/blob/main/rag/ingest.py"
+  },
+  "rag/normalize.py": {
+   "src": "learn/src/rag/normalize.py",
+   "notes": "learn/notes/rag__normalize.py.json",
+   "lang": "python",
+   "lines": 107,
+   "github": "https://github.com/Nardy11/bilingual-rag-assistant/blob/main/rag/normalize.py"
+  },
+  "rag/chunking.py": {
+   "src": "learn/src/rag/chunking.py",
+   "notes": "learn/notes/rag__chunking.py.json",
+   "lang": "python",
+   "lines": 89,
+   "github": "https://github.com/Nardy11/bilingual-rag-assistant/blob/main/rag/chunking.py"
+  },
+  "rag/embeddings.py": {
+   "src": "learn/src/rag/embeddings.py",
+   "notes": "learn/notes/rag__embeddings.py.json",
+   "lang": "python",
+   "lines": 76,
+   "github": "https://github.com/Nardy11/bilingual-rag-assistant/blob/main/rag/embeddings.py"
+  },
+  "rag/retrieval.py": {
+   "src": "learn/src/rag/retrieval.py",
+   "notes": "learn/notes/rag__retrieval.py.json",
+   "lang": "python",
+   "lines": 124,
+   "github": "https://github.com/Nardy11/bilingual-rag-assistant/blob/main/rag/retrieval.py"
+  },
+  "rag/translate.py": {
+   "src": "learn/src/rag/translate.py",
+   "notes": "learn/notes/rag__translate.py.json",
+   "lang": "python",
+   "lines": 58,
+   "github": "https://github.com/Nardy11/bilingual-rag-assistant/blob/main/rag/translate.py"
+  },
+  "rag/rerank.py": {
+   "src": "learn/src/rag/rerank.py",
+   "notes": "learn/notes/rag__rerank.py.json",
+   "lang": "python",
+   "lines": 37,
+   "github": "https://github.com/Nardy11/bilingual-rag-assistant/blob/main/rag/rerank.py"
+  },
+  "rag/generate.py": {
+   "src": "learn/src/rag/generate.py",
+   "notes": "learn/notes/rag__generate.py.json",
+   "lang": "python",
+   "lines": 174,
+   "github": "https://github.com/Nardy11/bilingual-rag-assistant/blob/main/rag/generate.py"
+  },
+  "rag/pipeline.py": {
+   "src": "learn/src/rag/pipeline.py",
+   "notes": "learn/notes/rag__pipeline.py.json",
+   "lang": "python",
+   "lines": 171,
+   "github": "https://github.com/Nardy11/bilingual-rag-assistant/blob/main/rag/pipeline.py"
+  },
+  "rag/api.py": {
+   "src": "learn/src/rag/api.py",
+   "notes": "learn/notes/rag__api.py.json",
+   "lang": "python",
+   "lines": 103,
+   "github": "https://github.com/Nardy11/bilingual-rag-assistant/blob/main/rag/api.py"
+  },
+  "rag/render.py": {
+   "src": "learn/src/rag/render.py",
+   "notes": "learn/notes/rag__render.py.json",
+   "lang": "python",
+   "lines": 45,
+   "github": "https://github.com/Nardy11/bilingual-rag-assistant/blob/main/rag/render.py"
+  },
+  "rag/__main__.py": {
+   "src": "learn/src/rag/__main__.py",
+   "notes": "learn/notes/rag____main__.py.json",
+   "lang": "python",
+   "lines": 39,
+   "github": "https://github.com/Nardy11/bilingual-rag-assistant/blob/main/rag/__main__.py"
+  },
+  "rag/__init__.py": {
+   "src": "learn/src/rag/__init__.py",
+   "notes": "learn/notes/rag____init__.py.json",
+   "lang": "python",
+   "lines": 6,
+   "github": "https://github.com/Nardy11/bilingual-rag-assistant/blob/main/rag/__init__.py"
+  },
+  "scripts/export_web_index.py": {
+   "src": "learn/src/scripts/export_web_index.py",
+   "notes": "learn/notes/scripts__export_web_index.py.json",
+   "lang": "python",
+   "lines": 75,
+   "github": "https://github.com/Nardy11/bilingual-rag-assistant/blob/main/scripts/export_web_index.py"
+  },
+  "docs/js/text.js": {
+   "src": "js/text.js",
+   "notes": "learn/notes/docs__js__text.js.json",
+   "lang": "javascript",
+   "lines": 152,
+   "github": "https://github.com/Nardy11/bilingual-rag-assistant/blob/main/docs/js/text.js"
+  },
+  "docs/js/ingest.js": {
+   "src": "js/ingest.js",
+   "notes": "learn/notes/docs__js__ingest.js.json",
+   "lang": "javascript",
+   "lines": 54,
+   "github": "https://github.com/Nardy11/bilingual-rag-assistant/blob/main/docs/js/ingest.js"
+  },
+  "docs/js/engine.js": {
+   "src": "js/engine.js",
+   "notes": "learn/notes/docs__js__engine.js.json",
+   "lang": "javascript",
+   "lines": 436,
+   "github": "https://github.com/Nardy11/bilingual-rag-assistant/blob/main/docs/js/engine.js"
+  },
+  "docs/js/llm.js": {
+   "src": "js/llm.js",
+   "notes": "learn/notes/docs__js__llm.js.json",
+   "lang": "javascript",
+   "lines": 96,
+   "github": "https://github.com/Nardy11/bilingual-rag-assistant/blob/main/docs/js/llm.js"
+  }
+ },
+ "paths": {
+  "document": [
+   {
+    "file": "rag/ingest.py",
+    "label": "read the file"
+   },
+   {
+    "file": "rag/normalize.py",
+    "label": "clean the text"
+   },
+   {
+    "file": "rag/chunking.py",
+    "label": "split into passages"
+   },
+   {
+    "file": "rag/embeddings.py",
+    "label": "embed each passage"
+   },
+   {
+    "file": "rag/retrieval.py",
+    "label": "index vectors and words"
+   }
+  ],
+  "question": [
+   {
+    "file": "rag/normalize.py",
+    "label": "normalise, tokenise"
+   },
+   {
+    "file": "rag/translate.py",
+    "label": "translate"
+   },
+   {
+    "file": "rag/embeddings.py",
+    "label": "embed"
+   },
+   {
+    "file": "rag/retrieval.py",
+    "label": "hybrid search + RRF"
+   },
+   {
+    "file": "rag/rerank.py",
+    "label": "re-rank"
+   },
+   {
+    "file": "rag/pipeline.py",
+    "label": "confidence bands"
+   },
+   {
+    "file": "rag/generate.py",
+    "label": "answer with citations"
+   }
+  ]
+ }
+}

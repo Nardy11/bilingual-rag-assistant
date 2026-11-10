@@ -1,0 +1,205 @@
+{
+  "file": "rag/api.py",
+  "title": "HTTP API",
+  "stage": "serve",
+  "summary": "This file serves the pipeline over HTTP with FastAPI. `POST /ask` takes a question and returns the full `Answer` as JSON; `POST /ingest` lets an administrator upload PDF, TXT or Markdown files into the index; `GET /health` reports the chunk count and generator. Because `/ingest` changes what every user is answered from, it is off unless an admin key is configured, and uploads are capped in count, size and PDF pages.",
+  "key_ideas": [
+    {
+      "term": "Protecting the index",
+      "explain": "In RAG, whoever can add documents controls the answers everyone gets. An open ingest endpoint would let anyone plant false policies or prompt-injection text. Requiring an admin key turns that into a deliberate, authorised action."
+    },
+    {
+      "term": "Upload limits",
+      "explain": "Files are read in 1 MB pieces and rejected as soon as they pass the size cap, so a huge upload never fully enters memory. File count and PDF page count are capped too, since text extraction and embedding cost grows with pages."
+    },
+    {
+      "term": "Constant-time comparison",
+      "explain": "`secrets.compare_digest` takes the same time whether the first or the last character differs. A normal `==` can stop at the first mismatch, and an attacker timing many requests could learn the key character by character."
+    },
+    {
+      "term": "Lazy start-up",
+      "explain": "The pipeline (and its models) is created on the first request, not when the module is imported. Tests can pass their own lightweight pipeline, and importing `rag.api` stays fast."
+    },
+    {
+      "term": "Validation with Pydantic",
+      "explain": "The request body is declared as a Pydantic model with limits (question 1 to 1000 characters, `k` 1 to 20). FastAPI rejects bad input with HTTP 422 before your code runs."
+    }
+  ],
+  "blocks": [
+    {
+      "from": 1,
+      "to": 15,
+      "note": "Module docstring: how to run the server (`uvicorn rag.api:app --port 8000`), the three endpoints, how the sample corpus is indexed at start-up from `RAG_CORPUS_DIR` (an empty string means start empty), and the security rules for `/ingest`: off unless `RAG_ADMIN_KEY` is set, then the key is required in `X-API-Key`, and uploads are capped by the three `RAG_MAX_*` settings."
+    },
+    {
+      "from": 16,
+      "to": 18,
+      "note": "`from __future__ import annotations` makes every type hint a lazy string. You can then write `list[str]` or `str | None` on older Pythons (3.8, 3.9) and name a class inside its own body."
+    },
+    {
+      "from": 19,
+      "to": 23,
+      "note": "L19: `os` for settings.\nL20: `secrets` for the constant-time key comparison.\nL21: `asdict` to turn the `Answer` dataclass (with nested `Citation`s) into a dict FastAPI can return as JSON.\nL22: `Path` for file names and the corpus folder.\nL23: blank."
+    },
+    {
+      "from": 24,
+      "to": 26,
+      "note": "L24: FastAPI pieces: the app, `File` and `UploadFile` for multipart uploads, `Header` to read a request header, `HTTPException` to return error statuses.\nL25: Pydantic `BaseModel` and `Field` to declare and validate the JSON body.\nL26: blank."
+    },
+    {
+      "from": 27,
+      "to": 27,
+      "note": "Imports the `ingest` module itself under the name `limits`, instead of importing the constants. The code then reads `limits.MAX_FILE_BYTES` at request time, so a test can change `rag.ingest.MAX_FILE_BYTES` (monkeypatch) and the API sees the new value. `from .ingest import MAX_FILE_BYTES` would copy the value once at import and never see the change."
+    },
+    {
+      "from": 28,
+      "to": 30,
+      "note": "Imports the supported extensions, the size exception and the byte loader from ingest, and the pipeline class. Line 30 is blank."
+    },
+    {
+      "from": 31,
+      "to": 33,
+      "note": "`_READ_CHUNK` is 1 MB, the piece size for reading uploads. Lines 32 and 33 are blank."
+    },
+    {
+      "from": 34,
+      "to": 38,
+      "note": "L34: `AskRequest` is the JSON body of `/ask`, declared as a Pydantic model.\nL35: `question` must be 1 to 1000 characters. The upper bound limits the work (embedding, translation, re-ranking) one request can cause.\nL36: `k`, the number of passages, defaults to 5 and must be between 1 and 20 (`ge` = greater or equal, `le` = less or equal).\nL37 to L38: blank."
+    },
+    {
+      "from": 39,
+      "to": 39,
+      "note": "`_check_admin` guards `/ingest`. It returns nothing on success and raises an HTTP error otherwise."
+    },
+    {
+      "from": 40,
+      "to": 40,
+      "note": "Reads the admin key from the environment at request time. An empty string means no key is configured."
+    },
+    {
+      "from": 41,
+      "to": 42,
+      "note": "With no key configured, ingestion is disabled entirely: HTTP 403 Forbidden with a message saying how to enable it. Safe by default."
+    },
+    {
+      "from": 43,
+      "to": 46,
+      "note": "L43: rejects a missing key, or a wrong one. `secrets.compare_digest` compares the two byte strings in constant time, which resists timing attacks. `.encode()` turns both into bytes, which `compare_digest` accepts even for non-ASCII keys.\nL44: HTTP 403 with a generic message that does not reveal whether the key was missing or wrong in which way.\nL45 to L46: blank."
+    },
+    {
+      "from": 47,
+      "to": 48,
+      "note": "`_read_capped` is an `async` function: reading an upload is I/O, so it awaits instead of blocking the server. The docstring states the idea: read in chunks and stop as soon as the cap is passed."
+    },
+    {
+      "from": 49,
+      "to": 49,
+      "note": "A growable byte buffer."
+    },
+    {
+      "from": 50,
+      "to": 50,
+      "note": "`while chunk := await f.read(_READ_CHUNK):` uses the **walrus operator** `:=` to read up to 1 MB, assign it to `chunk`, and loop while it is non-empty. At end of file `read` returns `b\"\"`, which is falsy."
+    },
+    {
+      "from": 51,
+      "to": 53,
+      "note": "L51: appends the piece.\nL52 to L53: as soon as the total passes the cap, stops with HTTP 413 (content too large). A 2 GB upload is rejected after about 10 MB has been read, not after the whole file is in memory."
+    },
+    {
+      "from": 54,
+      "to": 56,
+      "note": "Returns the data as immutable `bytes`. Lines 55 and 56 are blank."
+    },
+    {
+      "from": 57,
+      "to": 57,
+      "note": "`create_app` is an **app factory**: it builds and returns a new FastAPI app. Tests call it with their own `pipeline` (for example one with `HashingEmbedder`) and `corpus_dir`."
+    },
+    {
+      "from": 58,
+      "to": 58,
+      "note": "Creates the FastAPI app; the title and version appear in the generated OpenAPI docs at `/docs`."
+    },
+    {
+      "from": 59,
+      "to": 60,
+      "note": "A small mutable dict holds the pipeline. The nested functions below can change `state[\"pipeline\"]` without the `nonlocal` keyword because they modify the dict, not rebind a variable. Line 60 is blank."
+    },
+    {
+      "from": 61,
+      "to": 61,
+      "note": "`get` returns the pipeline, creating it on first use."
+    },
+    {
+      "from": 62,
+      "to": 65,
+      "note": "If there is no pipeline yet, builds one. Re-ranking and translation are **on** by default here (`RAG_RERANK` and `RAG_TRANSLATE` default to `\"1\"`), because the evaluation shows that is the best configuration; set either to `0` to turn it off for speed."
+    },
+    {
+      "from": 66,
+      "to": 68,
+      "note": "L66: the corpus folder: the explicit argument wins, else `RAG_CORPUS_DIR`, else `data/corpus`.\nL67 to L68: indexes it if it is a non-empty path to an existing folder. An empty string skips indexing and starts with an empty index."
+    },
+    {
+      "from": 69,
+      "to": 70,
+      "note": "Returns the (now existing) pipeline. Line 70 is blank."
+    },
+    {
+      "from": 71,
+      "to": 75,
+      "note": "L71: `@app.get(\"/health\")` registers the function as the handler for `GET /health`.\nL72: a plain `def` handler; FastAPI runs it in a thread pool.\nL73: getting the pipeline also builds it on the first call, so a health check after start-up warms the models.\nL74: returns status, the number of chunks in the index and the generator name, returned as JSON.\nL75: blank."
+    },
+    {
+      "from": 76,
+      "to": 77,
+      "note": "L76: registers `POST /ingest`.\nL77: `files: list[UploadFile] = File(...)` declares a required multipart field with one or more files (`...`, the Ellipsis, means required). `x_api_key: str | None = Header(None)` reads the `X-API-Key` header: FastAPI converts the underscores in the parameter name to hyphens and header names are case-insensitive. The handler is `async` because it awaits file reads."
+    },
+    {
+      "from": 78,
+      "to": 78,
+      "note": "Checks the admin key first, before reading any upload, so unauthorised requests cost almost nothing."
+    },
+    {
+      "from": 79,
+      "to": 80,
+      "note": "Rejects more than `MAX_FILES` files (default 5) with HTTP 413."
+    },
+    {
+      "from": 81,
+      "to": 83,
+      "note": "Checks every file's extension before reading any of them, and rejects unsupported types with HTTP 415 (unsupported media type). `f.filename or \"\"` guards against a missing file name."
+    },
+    {
+      "from": 84,
+      "to": 85,
+      "note": "The comment states the rule: parse everything first, so one bad file leaves the index untouched. `parsed` maps file name to pages."
+    },
+    {
+      "from": 86,
+      "to": 91,
+      "note": "L86 to L87: reads each file with the size cap.\nL88 to L89: parses it into pages. `load_bytes` re-checks the size and enforces the PDF page cap.\nL90 to L91: turns `UploadTooLarge` (too many pages, for example) into HTTP 413. `raise ... from e` keeps the original exception attached for logs."
+    },
+    {
+      "from": 92,
+      "to": 95,
+      "note": "L92: gets the shared pipeline.\nL93: only now, after every file parsed successfully, chunks, embeds and indexes each one. A dict comprehension maps each file name to its chunk count. Note that this embedding work runs inside an `async` handler, so it holds the event loop while it runs, an accepted trade-off for an admin-only endpoint.\nL94: returns the counts per file and the new total.\nL95: blank."
+    },
+    {
+      "from": 96,
+      "to": 99,
+      "note": "L96: registers `POST /ask`.\nL97: the body is parsed and validated into `AskRequest`; invalid input never reaches the handler. Plain `def`, so FastAPI runs the CPU-heavy model work in a worker thread instead of blocking the event loop.\nL98: runs the whole RAG pipeline and returns the `Answer` as a dict (`asdict` converts nested `Citation` dataclasses too), which FastAPI serialises to JSON.\nL99: blank."
+    },
+    {
+      "from": 100,
+      "to": 102,
+      "note": "Returns the configured app. Lines 101 and 102 are blank."
+    },
+    {
+      "from": 103,
+      "to": 103,
+      "note": "The module-level `app` that `uvicorn rag.api:app` looks for. Thanks to the lazy `get()`, creating it does not load any model."
+    }
+  ]
+}

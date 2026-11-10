@@ -1,0 +1,155 @@
+{
+  "file": "rag/embeddings.py",
+  "title": "Embeddings",
+  "stage": "embed",
+  "summary": "This file turns text into vectors, the representation dense retrieval searches over. The real embedder wraps `intfloat/multilingual-e5-small` (384 dimensions, about 100 languages including Arabic), adds the `query: ` / `passage: ` prefixes E5 was trained with, and returns unit-length float32 vectors. A second embedder, `HashingEmbedder`, needs no download and lets tests and CI run the whole pipeline. Both sit behind a small `Embedder` interface, so the rest of the code does not care which one it gets.",
+  "key_ideas": [
+    {
+      "term": "Bi-encoder embeddings",
+      "explain": "The question and each passage are encoded **separately** into fixed-size vectors, and relevance is the similarity of the two vectors. Passages can be embedded once at index time, so search only embeds the question. This is fast but coarser than a cross-encoder, which reads both texts together."
+    },
+    {
+      "term": "E5 query/passage prefixes",
+      "explain": "E5 models were trained with `query: ` in front of questions and `passage: ` in front of documents. The prefixes tell the model which side of an asymmetric search it is encoding; leaving them out measurably lowers retrieval quality."
+    },
+    {
+      "term": "Unit vectors and cosine",
+      "explain": "If every vector has length 1, the dot product of two vectors equals their cosine similarity. That is why vectors are normalised here and why the index can use a plain inner-product search."
+    },
+    {
+      "term": "Protocol (structural typing)",
+      "explain": "`typing.Protocol` describes the methods an object must have, without requiring inheritance. Any class with `dim`, `embed_queries` and `embed_passages` counts as an `Embedder`."
+    },
+    {
+      "term": "Feature hashing",
+      "explain": "`HashingEmbedder` maps each token to a vector position with a hash function, so there is no vocabulary and no training. It only captures word overlap, but it is deterministic and instant, which is what tests need."
+    }
+  ],
+  "blocks": [
+    {
+      "from": 1,
+      "to": 8,
+      "note": "Module docstring. It records why e5-small was chosen (strong multilingual retrieval at 118M parameters, CPU-friendly) and the key reason for the browser demo: the same weights exist as a quantized ONNX export (`Xenova/multilingual-e5-small`), so query vectors computed in the browser live in the same vector space as the passage vectors precomputed in Python. If the two sides used different models, their vectors could not be compared. It also notes that this class adds the E5 prefixes."
+    },
+    {
+      "from": 9,
+      "to": 11,
+      "note": "`from __future__ import annotations` makes every type hint a lazy string. You can then write `list[str]` or `str | None` on older Pythons (3.8, 3.9) and name a class inside its own body."
+    },
+    {
+      "from": 12,
+      "to": 15,
+      "note": "L12: `hashlib` for the stable MD5 hash in `HashingEmbedder`.\nL13: `os` to read the model name from the environment.\nL14: `Protocol` to declare the embedder interface.\nL15: blank."
+    },
+    {
+      "from": 16,
+      "to": 17,
+      "note": "NumPy: vectors are `np.ndarray` arrays of shape `(number of texts, dim)`."
+    },
+    {
+      "from": 18,
+      "to": 20,
+      "note": "The default model id, overridable with `RAG_EMBED_MODEL`. The README warns that a different model needs the confidence bands re-calibrated, because each model has its own similarity scale. Lines 19 and 20 are blank."
+    },
+    {
+      "from": 21,
+      "to": 22,
+      "note": "`Embedder` is a `Protocol`: a description of the interface, not a base class. It says an embedder has an integer `dim` (the vector size, 384 for e5-small)."
+    },
+    {
+      "from": 23,
+      "to": 28,
+      "note": "L24: `embed_queries` takes a list of strings and returns a matrix, one row per query. The `...` body (Ellipsis) means \"no implementation here\": a Protocol only declares signatures.\nL26: `embed_passages` does the same for documents. Two separate methods exist because asymmetric models like E5 encode questions and passages differently.\nL23, L25, L27, L28: blank."
+    },
+    {
+      "from": 29,
+      "to": 30,
+      "note": "`SentenceTransformerEmbedder` is the real embedder. It does not inherit from `Embedder`; it satisfies the Protocol simply by having the right attributes. `device=\"cpu\"` by default so it runs anywhere."
+    },
+    {
+      "from": 31,
+      "to": 32,
+      "note": "Lazy import of `sentence_transformers` (which pulls in PyTorch). Importing it at module top would make every `import rag` slow, even in tests that use `HashingEmbedder`."
+    },
+    {
+      "from": 33,
+      "to": 37,
+      "note": "L33: keeps the model name; `HybridIndex.save` writes it next to the vectors so you know which model produced them.\nL34: loads the model (downloading it on first use) onto the chosen device.\nL35: asks the model for its output size, 384 for e5-small, instead of hard-coding it.\nL36: remembers whether this is an E5 model. Only E5 gets the prefixes; another model family (for example a BGE model) was trained without them, and adding them would only add noise.\nL37: blank."
+    },
+    {
+      "from": 38,
+      "to": 38,
+      "note": "`_encode` is the shared private helper for queries and passages; only the prefix differs."
+    },
+    {
+      "from": 39,
+      "to": 40,
+      "note": "For E5 models, prepends the prefix to every text with a list comprehension. «هل عندنا إجازة الأمومة؟» is encoded as `\"query: هل عندنا إجازة الأمومة؟\"`."
+    },
+    {
+      "from": 41,
+      "to": 43,
+      "note": "`model.encode` runs the transformer and mean-pools the token vectors into one vector per text. `batch_size=32` processes 32 texts per forward pass, a speed/memory balance on CPU. `normalize_embeddings=True` divides each vector by its length, giving **unit vectors**, so a dot product later equals cosine similarity. `convert_to_numpy=True` returns a NumPy array instead of torch tensors, and `show_progress_bar=False` keeps logs quiet."
+    },
+    {
+      "from": 44,
+      "to": 45,
+      "note": "Casts to `float32`. FAISS only accepts 32-bit floats, and float32 halves memory compared with float64 with no loss that matters for similarity search."
+    },
+    {
+      "from": 46,
+      "to": 48,
+      "note": "`embed_queries` uses the `query: ` prefix. Use it for questions and also for the translated question."
+    },
+    {
+      "from": 49,
+      "to": 51,
+      "note": "`embed_passages` uses the `passage: ` prefix. Use it for chunks at index time and for candidate answer sentences in the extractive generator."
+    },
+    {
+      "from": 52,
+      "to": 55,
+      "note": "`count_tokens` counts tokens exactly as the model's own tokenizer would split the text. `add_special_tokens=False` leaves out the start/end markers so only the text is counted. `RAGPipeline._count` passes this function to the chunker, so a 160-token chunk is 160 real model tokens. A word count would undercount Arabic, which the multilingual tokenizer often splits into several subword pieces per word. Lines 54 and 55 are blank."
+    },
+    {
+      "from": 56,
+      "to": 58,
+      "note": "`HashingEmbedder` is the test double: a deterministic bag-of-words embedder that needs no download. It also satisfies the `Embedder` Protocol, so the whole pipeline can run in CI in seconds."
+    },
+    {
+      "from": 59,
+      "to": 62,
+      "note": "Stores the vector size (256 by default) and a model name like `hashing-256` so saved indexes record what produced them. It has no `count_tokens`, so the pipeline falls back to `simple_token_count` for it."
+    },
+    {
+      "from": 63,
+      "to": 65,
+      "note": "`_one` embeds one text. The import of `tokenize` is inside the method, a common way to avoid import cycles and to keep module import light."
+    },
+    {
+      "from": 66,
+      "to": 66,
+      "note": "Starts from a zero vector of length `dim`."
+    },
+    {
+      "from": 67,
+      "to": 69,
+      "note": "L67: uses the same BM25 tokens as lexical search, so normalised Arabic and folded plurals apply here too.\nL68: hashes the token with MD5 and reads the hex digest as a 128-bit integer. Python's built-in `hash()` is randomised per process for strings, so it would give different vectors on every run; MD5 is the same everywhere.\nL69: the **hashing trick**: `h % dim` picks a position, and another bit of the hash (`(h >> 64) % 2`, a bit from the upper half) picks the sign +1 or -1. Random signs make collisions between unrelated tokens cancel on average instead of always adding up."
+    },
+    {
+      "from": 70,
+      "to": 72,
+      "note": "Normalises to a unit vector, like the real embedder, so cosine scores work the same. The conditional `v / n if n else v` avoids dividing by zero when the text had no tokens (for example only stopwords). Line 72 is blank."
+    },
+    {
+      "from": 73,
+      "to": 75,
+      "note": "Embeds each text and stacks the rows into a matrix with `np.stack`. For an empty input it returns a correctly shaped `(0, dim)` float32 array, because `np.stack([])` would raise an error. Line 75 is blank."
+    },
+    {
+      "from": 76,
+      "to": 76,
+      "note": "A class attribute alias: `embed_passages` is the same function as `embed_queries`. A hashing embedder has no query/passage asymmetry, so one implementation serves both."
+    }
+  ]
+}

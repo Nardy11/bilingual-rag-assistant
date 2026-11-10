@@ -1,0 +1,91 @@
+{
+  "file": "docs/js/ingest.js",
+  "title": "Browser file reading",
+  "stage": "ingest",
+  "summary": "This module is the browser side of `rag/ingest.py`: it reads a file the user picked into pages of clean text. PDFs are parsed with pdf.js page by page, and TXT/Markdown files become one page. It enforces the same size and page limits as the Python API, and nothing leaves the device: the file is read by the browser tab itself. A `File` object goes in, a list of `{doc, page, text}` objects comes out, ready for `chunkPages` in `text.js`.",
+  "key_ideas": [
+    {
+      "term": "async/await and Promises",
+      "explain": "Reading a file or parsing a PDF takes time, so these APIs return a **Promise**, a value that arrives later. Inside an `async function`, `await` pauses until the Promise resolves, so the code reads top to bottom like Python, while the page stays responsive."
+    },
+    {
+      "term": "Dynamic import",
+      "explain": "`await import(url)` loads a module only when it is first needed. pdf.js is large, so it is fetched only when someone actually uploads a PDF."
+    },
+    {
+      "term": "Client-side processing",
+      "explain": "Because parsing happens in the tab, private documents never reach a server. The same limits still apply, because a huge file could freeze the page."
+    },
+    {
+      "term": "Web workers",
+      "explain": "pdf.js parses in a separate background thread (a worker) so the page does not freeze. `workerSrc` tells it where to load that worker script from."
+    }
+  ],
+  "blocks": [
+    {
+      "from": 1,
+      "to": 3,
+      "note": "Header comment: the browser side of `rag/ingest.py`, pdf.js for PDFs one page at a time, single page for text files, and the privacy point: the file is read in this tab and never uploaded."
+    },
+    {
+      "from": 4,
+      "to": 5,
+      "note": "An **ES module import**: takes `cleanText` and `unwrapLines` from `text.js`, the ports of Python's `clean_text` and `unwrap_lines`, so pages are cleaned exactly like in Python. Line 5 is blank."
+    },
+    {
+      "from": 6,
+      "to": 6,
+      "note": "The base URL of a pinned pdf.js version on a CDN. Pinning an exact version (4.4.168) means an upstream release can never change behaviour silently."
+    },
+    {
+      "from": 7,
+      "to": 9,
+      "note": "L7: the supported extensions, the same as Python's `SUPPORTED`. An array instead of a set; `includes` does the membership check.\nL8: 10 MB per file, the same as `MAX_FILE_BYTES` in the Python API.\nL9: 200 PDF pages, the same as `MAX_PDF_PAGES`."
+    },
+    {
+      "from": 10,
+      "to": 11,
+      "note": "Line 10 is blank. L11: a module-level cache for the pdf.js library, `null` until first use, like a lazy import in Python."
+    },
+    {
+      "from": 12,
+      "to": 19,
+      "note": "L12: `loadPdfJs` is `async`, so it returns a Promise.\nL13: loads only once.\nL14: `await import(...)` is a **dynamic import**: it downloads and evaluates the pdf.js module at run time. A template literal builds the URL.\nL15: tells pdf.js where its worker script is. pdf.js parses in a background worker thread so a big PDF does not freeze the page.\nL16 to L18: returns the cached library.\nL19: blank."
+    },
+    {
+      "from": 20,
+      "to": 24,
+      "note": "`extensionOf` returns the lowercased extension including the dot, or `\"\"` if there is none. It is Python's `Path(name).suffix.lower()`: `lastIndexOf(\".\")` finds the last dot and `slice` takes the rest. Line 24 is blank."
+    },
+    {
+      "from": 25,
+      "to": 34,
+      "note": "L25: comment: pdf.js returns positioned text pieces, and a piece marks the end of a visual line with `hasEOL`.\nL26 to L31: `pageText` concatenates every piece's string and adds a newline where a line ends. The result looks like pypdf's `extract_text()` output: hard line wraps that `unwrapLines` will join later.\nL32 to L34: returns the text, closes the function, blank line."
+    },
+    {
+      "from": 35,
+      "to": 35,
+      "note": "`readFile(file, onPage = () => {})` takes a browser `File` and an optional progress callback. The default is an arrow function that does nothing, so callers that do not care about progress can omit it."
+    },
+    {
+      "from": 36,
+      "to": 38,
+      "note": "L36: the file's extension.\nL37: rejects unsupported types by **throwing** an `Error`, JavaScript's `raise`. The caller catches it and shows the message.\nL38: rejects files over 10 MB before reading a single byte. `file.size` is known without reading, like `stat().st_size`."
+    },
+    {
+      "from": 39,
+      "to": 42,
+      "note": "L39: text and Markdown files.\nL40: `await file.text()` reads the whole file as UTF-8 text (invalid bytes become the replacement character, like Python's `errors=\"replace\"`), then cleans it.\nL41: one page, or an empty list for an empty file. `{ doc: file.name, page: 1, text }` is the same shape as Python's `Page`.\nL42: closes the branch."
+    },
+    {
+      "from": 43,
+      "to": 45,
+      "note": "L43: loads pdf.js on first use.\nL44: reads the file into bytes (`arrayBuffer()`, wrapped in a `Uint8Array`, a typed array of bytes) and asks pdf.js to open it. `getDocument` returns a loading task whose `.promise` resolves to the document.\nL45: checks the page count before extracting any text, like Python's `load_file`."
+    },
+    {
+      "from": 46,
+      "to": 54,
+      "note": "L46: the output list.\nL47: pages are numbered from 1 in pdf.js, matching the 1-based page numbers used in citations.\nL48: loads one page.\nL49: extracts its text, cleans it, then joins line wraps, the same order as Python (`unwrap_lines(clean_text(...))`).\nL50: keeps only pages with text; an image-only scanned page is dropped (the caller then suggests OCR).\nL51: reports progress, for example \"page 3 of 12\".\nL52 to L54: closes the loop, returns the pages, closes the function."
+    }
+  ]
+}

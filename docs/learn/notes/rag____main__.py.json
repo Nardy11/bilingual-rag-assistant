@@ -1,0 +1,102 @@
+{
+  "file": "rag/__main__.py",
+  "title": "Command line",
+  "stage": "cli",
+  "summary": "This file is the command-line interface, run as `python -m rag ask \"question\"`. It builds a pipeline with the options you choose (re-ranking, translation, generator), indexes a folder of documents, asks one question and prints the answer, the confidence, the translated query and the citations. It is the quickest way to try the system without starting a server.",
+  "key_ideas": [
+    {
+      "term": "`python -m package`",
+      "explain": "When you run `python -m rag`, Python executes `rag/__main__.py`. That gives a package a command-line entry point without installing a separate script."
+    },
+    {
+      "term": "argparse subcommands",
+      "explain": "`add_subparsers` lets one program have several verbs, like `git commit` and `git push`. Here there is one verb, `ask`, which leaves room to add others (for example `ingest`) later."
+    },
+    {
+      "term": "No persistent index",
+      "explain": "The CLI re-reads and re-embeds the documents on every run. That is simple and fine for a small corpus, but a large one would save the index with `HybridIndex.save` and load it instead."
+    }
+  ],
+  "blocks": [
+    {
+      "from": 1,
+      "to": 2,
+      "note": "Module docstring, written as a usage line: the `ask` command with its options. Line 2 is blank."
+    },
+    {
+      "from": 3,
+      "to": 4,
+      "note": "`from __future__ import annotations` makes every type hint a lazy string. You can then write `list[str]` or `str | None` on older Pythons (3.8, 3.9) and name a class inside its own body."
+    },
+    {
+      "from": 5,
+      "to": 6,
+      "note": "`argparse`, the standard library module for parsing command-line arguments."
+    },
+    {
+      "from": 7,
+      "to": 10,
+      "note": "Imports the generator factory (for `--llm`) and the pipeline. Lines 9 and 10 are blank."
+    },
+    {
+      "from": 11,
+      "to": 11,
+      "note": "`main` holds all CLI logic, so it can be called from tests or other code without running on import."
+    },
+    {
+      "from": 12,
+      "to": 13,
+      "note": "L12: the top-level parser, named `rag` in help and error messages.\nL13: a subcommand group. `dest=\"cmd\"` stores the chosen subcommand name, and `required=True` makes running `python -m rag` with no command an error with a usage message."
+    },
+    {
+      "from": 14,
+      "to": 15,
+      "note": "L14: the `ask` subcommand with its help text.\nL15: a positional argument, the question. Quote it in the shell: `python -m rag ask \"هل عندنا إجازة الأمومة؟\"`."
+    },
+    {
+      "from": 16,
+      "to": 20,
+      "note": "L16: `--docs`, the folder to index, default `data/corpus`, relative to where you run the command.\nL17: `--rerank`, a flag (`store_true` means present = True, absent = False) that turns on the cross-encoder.\nL18: `--translate`, a flag that also searches with the question translated between Arabic and English.\nL19: `--llm`, an optional generator name (`extractive`, `gemini` or `openai`); `None` means \"auto-detect from the environment\".\nL20: `-k`, how many passages to retrieve, parsed as an int, default 5."
+    },
+    {
+      "from": 21,
+      "to": 22,
+      "note": "Parses `sys.argv` into a namespace object, so options become attributes such as `args.rerank`. Line 22 is blank."
+    },
+    {
+      "from": 23,
+      "to": 25,
+      "note": "L23: builds the pipeline with the chosen optional stages. This loads e5-small, and the re-ranker if asked.\nL24 to L25: if `--llm` was given, replaces the auto-selected generator with the requested one, sharing the pipeline's embedder."
+    },
+    {
+      "from": 26,
+      "to": 27,
+      "note": "L26: indexes every PDF, TXT and Markdown file in the folder: load, chunk, embed, add to FAISS and BM25.\nL27: asks the question and gets an `Answer`."
+    },
+    {
+      "from": 28,
+      "to": 29,
+      "note": "In the middle confidence band (found but not sure), prints a warning line first, so the reader treats the following text as the closest passage, not a confident answer."
+    },
+    {
+      "from": 30,
+      "to": 31,
+      "note": "L30: prints the answer text with its `[n]` markers.\nL31: prints the confidence kind and value (a cosine or a re-ranker logit) and the generator name. The leading `\\n` adds a blank line."
+    },
+    {
+      "from": 32,
+      "to": 33,
+      "note": "If translation was used, prints the other-language wording, for example `also searched as: Do we have maternity leave?`."
+    },
+    {
+      "from": 34,
+      "to": 37,
+      "note": "Prints each citation as `[n] chunk_id (page p)`, so you can find the exact passage, for example `[1] employee-handbook.en.md#p1-c3 (page 1)`. Lines 36 and 37 are blank."
+    },
+    {
+      "from": 38,
+      "to": 39,
+      "note": "The standard guard: `main()` runs only when this file is executed (as `python -m rag`), not when it is imported."
+    }
+  ]
+}

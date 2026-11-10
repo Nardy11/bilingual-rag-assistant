@@ -1,0 +1,261 @@
+{
+  "file": "rag/pipeline.py",
+  "title": "Pipeline",
+  "stage": "orchestrate",
+  "summary": "This file wires every stage together into one object, `RAGPipeline`. Adding documents runs chunking, embedding and indexing; asking a question runs translation, hybrid search on both wordings, fusion, optional re-ranking, a confidence decision in three bands, and generation with citations. A question goes in and an `Answer` comes out: the text, whether something was found, how sure it is, the cited chunks with doc and page, and the translated query if one was used.",
+  "key_ideas": [
+    {
+      "term": "Three confidence bands",
+      "explain": "Instead of one yes/no threshold, the top score is compared with a floor and a \"sure\" line: below the floor you get \"Not found in the documents\", between the two you get the closest passage marked \"not sure\", above the sure line a normal answer. The first version used one cosine gate (0.80) and refused «هل عندنا إجازة الأمومة؟» even though the maternity passage was ranked first with 0.783. No single cut-off separates answerable from unanswerable questions, so the overlap zone is shown honestly instead of guessed."
+    },
+    {
+      "term": "Confidence signal",
+      "explain": "With the re-ranker on, confidence is the cross-encoder logit of the top passage (floor -4, sure -2). Without it, it is the top cosine of e5-small (floor 0.76, sure 0.82). Each pair of numbers is calibrated for its model and corpus."
+    },
+    {
+      "term": "Re-rank pool size",
+      "explain": "Hybrid search hands the top 10 candidates to the cross-encoder. The README reports that 10 gave the same or better quality than 20 at half the cost."
+    },
+    {
+      "term": "Dependency injection",
+      "explain": "The embedder and generator are constructor arguments with sensible defaults. Tests pass a `HashingEmbedder` and run the full pipeline with no model download."
+    }
+  ],
+  "blocks": [
+    {
+      "from": 1,
+      "to": 2,
+      "note": "Module docstring: the end-to-end flow, ingest, chunk, index, retrieve, optional rerank, generate with citations."
+    },
+    {
+      "from": 3,
+      "to": 4,
+      "note": "`from __future__ import annotations` makes every type hint a lazy string. You can then write `list[str]` or `str | None` on older Pythons (3.8, 3.9) and name a class inside its own body."
+    },
+    {
+      "from": 5,
+      "to": 8,
+      "note": "L5: `os` for the threshold overrides.\nL6: `dataclass` and `field` for `Citation` and `Answer`.\nL7: `Path` for the documents folder argument.\nL8: blank."
+    },
+    {
+      "from": 9,
+      "to": 15,
+      "note": "L9: the chunker and the fallback token counter.\nL10: the `Embedder` Protocol and the default real embedder.\nL11: the not-found messages, the `Generator` Protocol and the generator factory.\nL12: `Page` and the folder loader.\nL13: `detect_language` for the refusal message language.\nL14: the index and the cross-query fusion.\nL15: blank. The re-ranker and translator are **not** imported here; they are imported only when turned on, so the heavy models load only if needed."
+    },
+    {
+      "from": 16,
+      "to": 26,
+      "note": "The design comment for confidence. Three bands: at or above SURE, answer; between FLOOR and SURE, answer marked \"not sure\"; below FLOOR, \"not found\". It explains why a single cut-off failed (no threshold separates answerable from off-topic questions, and the old 0.80 cosine gate refused questions whose right passage was ranked first) and how the floors were chosen: so that no answerable question in the evaluation is refused. The comment counts 48 answerable and 28 off-topic questions, while the README reports 46 and 24; either way the point is the same. It ends with a warning: a different model needs re-calibrating with `eval/calibrate_confidence.py`."
+    },
+    {
+      "from": 27,
+      "to": 28,
+      "note": "L27: `MIN_SCORE = -4.0`, the re-ranker floor. Scores are logits, so negative numbers are normal; below -4 the best passage is judged unrelated.\nL28: `SURE_SCORE = -2.0`, the re-ranker \"sure\" line. Both can be overridden with environment variables, and `float(...)` converts the string."
+    },
+    {
+      "from": 29,
+      "to": 31,
+      "note": "L29: `MIN_CONFIDENCE = 0.76`, the cosine floor when there is no re-ranker. e5 squeezes nearly every pair into roughly 0.75 to 0.90, so the useful range is narrow.\nL30: `SURE_CONFIDENCE = 0.82`, the cosine \"sure\" line.\nL31: blank."
+    },
+    {
+      "from": 32,
+      "to": 34,
+      "note": "`RERANK_POOL = 10`: how many hybrid candidates the cross-encoder re-scores. The cross-encoder costs one forward pass per (wording, passage) pair, so the pool size sets the latency. Lines 33 and 34 are blank."
+    },
+    {
+      "from": 35,
+      "to": 35,
+      "note": "`@dataclass` for a citation record."
+    },
+    {
+      "from": 36,
+      "to": 43,
+      "note": "L36: `Citation` is one cited source in an answer.\nL37: `n` is the number used in the answer text, the `[n]`.\nL38: the chunk id, for example `travel-policy.en.pdf#p2-c0`.\nL39 to L40: the document and page, so a reader can open the source.\nL41: the full chunk text, so the UI can show the passage next to the answer.\nL42 to L43: blank."
+    },
+    {
+      "from": 44,
+      "to": 44,
+      "note": "`@dataclass` for the answer record. The API returns it as JSON with `asdict`."
+    },
+    {
+      "from": 45,
+      "to": 50,
+      "note": "L45: `Answer` is everything a caller needs to show and judge the result.\nL46: the original question.\nL47: the answer text with `[n]` markers, or the not-found message.\nL48: `found`: false when the pipeline refused or the LLM replied \"not found\".\nL49: the confidence value (a cosine or a logit, see `confidence_kind`).\nL50: the name of the generator that answered."
+    },
+    {
+      "from": 51,
+      "to": 52,
+      "note": "L51: the cited sources. `field(default_factory=list)` gives each `Answer` its own list.\nL52: the ids of all retrieved chunks, cited or not, useful for debugging and evaluation (recall@k)."
+    },
+    {
+      "from": 53,
+      "to": 57,
+      "note": "L53: `sure`: false in the \"not sure\" band, where the answer is the closest passage rather than a confident answer.\nL54: `confidence_kind`: `\"cosine\"` or `\"rerank\"`, so a reader knows the scale of `confidence`.\nL55: the translated question when translation was used, shown in the UI as \"searched as\".\nL56 to L57: blank."
+    },
+    {
+      "from": 58,
+      "to": 58,
+      "note": "`RAGPipeline` is the class that ties every stage together."
+    },
+    {
+      "from": 59,
+      "to": 71,
+      "note": "The constructor and its parameters, all with defaults. `embedder` and `generator` can be injected (tests pass a `HashingEmbedder`); `rerank` and `translate` switch the two optional stages, both off by default here (the API and the Space turn them on); the four thresholds default to the module constants; `max_tokens` and `overlap_tokens` are the chunking budget, 160 and 40."
+    },
+    {
+      "from": 72,
+      "to": 74,
+      "note": "L72: uses the given embedder or creates the e5-small one. `or` picks the right side when the left is `None`.\nL73: a new empty `HybridIndex` built on that embedder.\nL74: uses the given generator or lets `get_generator` pick from the environment. The extractive generator receives the same embedder, so its sentence vectors are in the same space as the index."
+    },
+    {
+      "from": 75,
+      "to": 79,
+      "note": "Re-ranker is `None` unless `rerank=True`. The import sits inside the `if`, so `sentence_transformers.CrossEncoder` and its model load only when re-ranking is wanted."
+    },
+    {
+      "from": 80,
+      "to": 84,
+      "note": "The same pattern for the translator: `None` unless `translate=True`, with a lazy import of `MarianTranslator`. The translation models (about 300 MB each) themselves load on the first question."
+    },
+    {
+      "from": 85,
+      "to": 88,
+      "note": "L85: stores the cosine floor and sure line. `a, b = x, y` is tuple assignment, two attributes per line.\nL86: stores the re-ranker floor and sure line.\nL87: stores the chunking budget.\nL88: blank."
+    },
+    {
+      "from": 89,
+      "to": 92,
+      "note": "L89: `_count` is the token counter handed to the chunker.\nL90: `getattr(obj, \"count_tokens\", None)` returns the method if the embedder has one (the real e5 embedder), else `None` (the hashing embedder). This is duck typing: check for the capability, not the class.\nL91: uses the model's own tokenizer when available, else the simple regex count. With e5, a 160-token chunk is exactly 160 model tokens.\nL92: blank."
+    },
+    {
+      "from": 93,
+      "to": 94,
+      "note": "L93: `add_pages` adds documents. `index` lets a caller add to a private index instead of the shared one.\nL94: chunks the pages with the pipeline's budget and token counter."
+    },
+    {
+      "from": 95,
+      "to": 96,
+      "note": "Picks the target index. The comment explains why it is `index is None` and not `index or self.index`: `HybridIndex` defines `__len__`, so an **empty** private index is falsy, and `or` would silently write into the shared index instead. That would let one Space visitor's upload change what every other visitor sees."
+    },
+    {
+      "from": 97,
+      "to": 99,
+      "note": "Embeds and indexes the chunks (`HybridIndex.add` embeds them as passages and rebuilds BM25) and returns how many chunks were added. Line 99 is blank."
+    },
+    {
+      "from": 100,
+      "to": 105,
+      "note": "L100 to L101: `fork_index` returns a private copy of the shared index, used per Space session so uploads never touch the shared one.\nL102: a new empty index on the same embedder.\nL103: adds copies of the chunk list and the vectors. Passing the vectors means no re-embedding, so forking is fast. `list(...)` and `.copy()` make sure later changes to the fork never modify the original's list or array.\nL104: returns the fork.\nL105: blank."
+    },
+    {
+      "from": 106,
+      "to": 108,
+      "note": "`ingest_directory` loads every supported file in a folder and adds it. This is what the CLI, the API start-up and the evaluation call. Line 108 is blank."
+    },
+    {
+      "from": 109,
+      "to": 110,
+      "note": "`alt_queries` returns the other-language wording of the question as a tuple, or an empty tuple. A tuple (not a list) is used because it is passed around as an immutable value and used as a default argument elsewhere."
+    },
+    {
+      "from": 111,
+      "to": 112,
+      "note": "Translation off returns no alternatives."
+    },
+    {
+      "from": 113,
+      "to": 115,
+      "note": "L113: translates. `MarianTranslator` returns `\"\"` if the translation looks broken.\nL114: keeps the translation only if it is non-empty and actually different from the question (ignoring case and surrounding spaces). A product code or a number often \"translates\" to itself, and searching twice with the same text would only double-count it in fusion.\nL115: blank."
+    },
+    {
+      "from": 116,
+      "to": 122,
+      "note": "`retrieve` signature. `k` is how many hits to return (5). `index` optionally targets a private index. `alt_queries` uses `None` to mean \"not given, compute it here\" and `()` to mean \"given, and there are none\". That difference lets `ask` translate once and pass the result in, since translation is the slowest step."
+    },
+    {
+      "from": 123,
+      "to": 123,
+      "note": "Docstring: hybrid search with the question and its translation, fused, then optionally re-ranked."
+    },
+    {
+      "from": 124,
+      "to": 125,
+      "note": "L124: the target index, with the same `is None` rule as in `add_pages`.\nL125: computes the translation only if the caller did not pass one."
+    },
+    {
+      "from": 126,
+      "to": 126,
+      "note": "How many candidates to fetch per wording: with a re-ranker, at least `RERANK_POOL` (10), so the cross-encoder has room to promote a passage ranked 6th to 10th by hybrid search; without one, just `k`."
+    },
+    {
+      "from": 127,
+      "to": 127,
+      "note": "Runs hybrid search (dense plus BM25, fused with RRF) once per wording. `(question, *alts)` builds a tuple of the question followed by any alternatives."
+    },
+    {
+      "from": 128,
+      "to": 128,
+      "note": "With one wording, its list is used directly. With two, `fuse_hits` applies RRF again across the two lists, keyed by chunk id, so a passage found by both the Arabic and the English query rises to the top."
+    },
+    {
+      "from": 129,
+      "to": 130,
+      "note": "If the re-ranker is on, it re-scores the candidates against every wording and keeps the top `k`. Now `score` is a cross-encoder logit."
+    },
+    {
+      "from": 131,
+      "to": 132,
+      "note": "Returns at most `k` hits. Line 132 is blank."
+    },
+    {
+      "from": 133,
+      "to": 133,
+      "note": "`ask` answers one question end to end. `index` lets a Space session ask against its private index."
+    },
+    {
+      "from": 134,
+      "to": 135,
+      "note": "L134: translates once.\nL135: retrieves with the question and that translation."
+    },
+    {
+      "from": 136,
+      "to": 138,
+      "note": "L136: with the re-ranker, confidence uses the re-ranker scale.\nL137: records the kind and picks the logit floor (-4) and sure line (-2).\nL138: confidence is the top hit's re-ranker score (hits are sorted, so `hits[0]` is the best). If there are no hits, a value below the floor guarantees a refusal."
+    },
+    {
+      "from": 139,
+      "to": 141,
+      "note": "L139: without the re-ranker, the cosine scale is used.\nL140: records the kind and picks the cosine floor (0.76) and sure line (0.82).\nL141: confidence is the **highest cosine** among the hits, not the first hit's, because after RRF the first hit is ordered by fused rank, not by cosine. `max(..., default=0.0)` handles an empty list. The values come from `Hit.dense`, which `fuse_hits` kept as the best over both wordings."
+    },
+    {
+      "from": 142,
+      "to": 142,
+      "note": "Extra fields shared by both return paths, built once as a dict and passed later with `**extra` (dict unpacking into keyword arguments)."
+    },
+    {
+      "from": 143,
+      "to": 154,
+      "note": "Band 1, **not found**: no hits or confidence below the floor. Returns the not-found message in the question's language, `found=False`, no citations, but still the retrieved chunk ids (useful for debugging), and `sure=False`. The generator is never called, which saves an LLM call on off-topic questions such as \"who won the world cup\"."
+    },
+    {
+      "from": 155,
+      "to": 155,
+      "note": "Above the floor, the generator writes the answer from the hits, with the translation available to the extractive scorer."
+    },
+    {
+      "from": 156,
+      "to": 156,
+      "note": "An LLM may still decide the sources do not answer the question and reply with the exact not-found sentence, as the prompt instructs. `str.startswith` with a tuple checks both languages. This is the second gate the README mentions: the model reads the passage, it does not just measure similarity."
+    },
+    {
+      "from": 157,
+      "to": 160,
+      "note": "Turns the generator's cited numbers into `Citation` records. Source `[n]` is `hits[n - 1]` because sources were numbered from 1; this works for both the LLM and the extractive generator because both number the hits the same way."
+    },
+    {
+      "from": 161,
+      "to": 171,
+      "note": "Returns the answer. `sure=found and confidence >= sure` puts it in band 3 (sure) when the score reaches the sure line, and in band 2 (\"not sure\", shown with the prefix \"Not sure this answers it. The closest passage in the documents says:\") when it is between the floor and the sure line. A \"not found\" reply from an LLM is never marked sure. The local variable `sure` (the threshold) and the keyword `sure=` (the `Answer` field) share a name; Python keeps them apart because one is a variable and the other an argument name."
+    }
+  ]
+}

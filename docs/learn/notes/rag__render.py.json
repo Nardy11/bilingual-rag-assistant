@@ -1,0 +1,87 @@
+{
+  "file": "rag/render.py",
+  "title": "HTML rendering",
+  "stage": "render",
+  "summary": "This file turns an `Answer` into HTML for the Gradio app on Hugging Face Spaces: the answer itself, a \"not sure\" note when it is in the middle confidence band, a line with the score and generator, and the list of cited passages. Its main job beyond layout is safety: answers and passages come from documents that anyone may upload, so every piece of text is HTML-escaped and the right-to-left direction is set only from fixed values.",
+  "key_ideas": [
+    {
+      "term": "HTML escaping",
+      "explain": "Document text is untrusted input. Without escaping, a passage containing `<script>` or `<img onerror=...>` would run in the viewer's browser (cross-site scripting). `html.escape` turns `<`, `>`, `&` and quotes into harmless entities."
+    },
+    {
+      "term": "Right-to-left text",
+      "explain": "Arabic is written right to left. Setting `dir=\"rtl\"` on each Arabic block lets the browser order the characters and punctuation correctly, while English blocks stay `ltr`."
+    },
+    {
+      "term": "Showing uncertainty",
+      "explain": "The middle confidence band is rendered with an explicit \"Not sure this answers it\" note above the quoted passage, so the reader knows to check the citation rather than trust the answer."
+    }
+  ],
+  "blocks": [
+    {
+      "from": 1,
+      "to": 6,
+      "note": "Module docstring: HTML rendering of an answer for the Gradio UI. It states the security rule: every piece of text is escaped, and only the fixed markup and the fixed `dir` values (`rtl`, `ltr`) are trusted. Line 6 is blank."
+    },
+    {
+      "from": 7,
+      "to": 8,
+      "note": "`from __future__ import annotations` makes every type hint a lazy string. You can then write `list[str]` or `str | None` on older Pythons (3.8, 3.9) and name a class inside its own body."
+    },
+    {
+      "from": 9,
+      "to": 10,
+      "note": "`escape` from the standard library's `html` module. By default it escapes `&`, `<`, `>`, `\"` and `'`, so escaped text is safe both between tags and inside attribute values."
+    },
+    {
+      "from": 11,
+      "to": 13,
+      "note": "Imports `detect_language` (to choose `rtl` or `ltr`) and the `Answer` type."
+    },
+    {
+      "from": 14,
+      "to": 19,
+      "note": "The \"not sure\" note in both languages, shown above an answer in the middle band. The English text is the one the README quotes. Lines 18 and 19 are blank."
+    },
+    {
+      "from": 20,
+      "to": 23,
+      "note": "`_dir` returns `\"rtl\"` for Arabic text and `\"ltr\"` otherwise. It can only ever return one of two constant strings, so putting its result into an HTML attribute is safe even though the input text is untrusted. Lines 22 and 23 are blank."
+    },
+    {
+      "from": 24,
+      "to": 24,
+      "note": "`render_answer` builds the HTML for the answer panel."
+    },
+    {
+      "from": 25,
+      "to": 28,
+      "note": "L25: no note by default.\nL26: only an answer that was found but is not sure (the middle band) gets the note.\nL27: the note is in the **question's** language, so an Arabic question gets the Arabic note even if the quoted passage is English.\nL28: renders the note in a slightly faded, italic paragraph with the right direction. The text is escaped even though it is a constant, a habit that keeps the rule simple: escape everything."
+    },
+    {
+      "from": 29,
+      "to": 29,
+      "note": "If the question was translated, adds \"searched as: <translation>\" so the user can see how the question was also searched, for example \"Do we have maternity leave?\". Escaped, because model output is untrusted too."
+    },
+    {
+      "from": 30,
+      "to": 36,
+      "note": "L30 to L31: returns the note followed by the answer in a larger font, with its own direction (an Arabic answer to an English question is still rendered `rtl`).\nL32 to L33: a faded line with the confidence kind and score to 3 decimals (`:.3f`), the generator name and the \"searched as\" part. The line is forced `ltr` because it is English metadata.\nL31 to L33 are adjacent f-strings inside parentheses, which Python joins into one string.\nL35 to L36: blank."
+    },
+    {
+      "from": 37,
+      "to": 39,
+      "note": "`render_citations` builds the list of cited passages. With no citations (for example a \"not found\" answer) it shows a short italic message instead of an empty list."
+    },
+    {
+      "from": 40,
+      "to": 44,
+      "note": "A generator expression, joined into one string, that renders each citation as a list item: the bold `[n] document, page p` label (forced `ltr`), the chunk id in `<code>`, and the full passage in a `<blockquote>` with its own direction. Every piece of text (document name, chunk id, passage) is escaped; `c.n` and `c.page` are integers and safe."
+    },
+    {
+      "from": 45,
+      "to": 45,
+      "note": "Wraps the items in an ordered list with list markers turned off, since the `[n]` labels already number them."
+    }
+  ]
+}

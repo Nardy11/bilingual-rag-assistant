@@ -1,0 +1,126 @@
+{
+  "file": "scripts/export_web_index.py",
+  "title": "Web index export",
+  "stage": "export",
+  "summary": "This script precomputes everything the browser demo needs and writes it to `docs/index.json`: the chunks with their BM25 tokens, the chunk embeddings, the embeddings of every candidate answer sentence, the confidence thresholds, the model ids and the tokenizer lists. The browser then only has to embed the question (with the same e5-small model as ONNX) and can run retrieval and the extractive answer without a server. Run it after changing the corpus or any setting it exports.",
+  "key_ideas": [
+    {
+      "term": "Precomputed index",
+      "explain": "Embedding documents is the expensive part of RAG and happens once. Shipping the vectors means the browser does only the cheap, per-question work."
+    },
+    {
+      "term": "Same vector space",
+      "explain": "Query vectors computed in the browser can only be compared with passage vectors from the same model. The browser loads `Xenova/multilingual-e5-small`, an ONNX export of the exact weights used here."
+    },
+    {
+      "term": "One source of truth",
+      "explain": "Stopwords, Arabic prefixes and thresholds are read from the Python modules and written into the JSON, so the browser cannot drift from the Python behaviour."
+    },
+    {
+      "term": "Base64 float32 vectors",
+      "explain": "Vectors are stored as raw little-endian float32 bytes in base64, far smaller than a JSON list of decimal numbers, and JavaScript can read them straight into a `Float32Array`."
+    }
+  ],
+  "blocks": [
+    {
+      "from": 1,
+      "to": 10,
+      "note": "Module docstring: what goes into `docs/index.json` (chunks, their BM25 tokens from the Python tokenizer so the browser does not re-tokenise documents, chunk embeddings, and embeddings of every candidate answer sentence), the rule that all vectors come from the SAME model the browser loads, and the format: float32, base64, L2-normalised (unit length). Line 10 is blank."
+    },
+    {
+      "from": 11,
+      "to": 12,
+      "note": "`from __future__ import annotations` makes every type hint a lazy string. You can then write `list[str]` or `str | None` on older Pythons (3.8, 3.9) and name a class inside its own body."
+    },
+    {
+      "from": 13,
+      "to": 17,
+      "note": "L13: `base64` to encode the vector bytes as text.\nL14: `json` to write the index.\nL15: `sys` to adjust the import path.\nL16: `Path` for file locations.\nL17: blank."
+    },
+    {
+      "from": 18,
+      "to": 19,
+      "note": "NumPy, for the vector arrays."
+    },
+    {
+      "from": 20,
+      "to": 22,
+      "note": "L20: `ROOT` is the repository root: this file's resolved path, two levels up (`parents[0]` is `scripts/`, `parents[1]` is the repo).\nL21: puts the repo root first on `sys.path`, so `import rag` works when you run the script directly, even if the package is not installed.\nL22: blank."
+    },
+    {
+      "from": 23,
+      "to": 29,
+      "note": "Imports from the package. Each line carries `# noqa: E402` to tell the linter (ruff) that \"import not at top of file\" is intentional: these imports must come after the `sys.path` change. It imports `split_sentences` and `is_answer_candidate` (to find the same answer sentences the extractive generator would), the tokenizer and its word lists, the pipeline, and the re-ranker id. `_AR_PREFIXES` is private by convention, but exporting it is exactly what keeps the browser tokenizer identical. Lines 28 and 29 are blank."
+    },
+    {
+      "from": 30,
+      "to": 33,
+      "note": "`b64` encodes an array: `np.ascontiguousarray(a, dtype=\"<f4\")` forces little-endian (`<`) 4-byte floats in one contiguous block, `.tobytes()` takes the raw bytes, and `base64.b64encode(...).decode()` turns them into an ASCII string. Little-endian is explicit because JavaScript typed arrays use the machine's byte order, which is little-endian on practically every browser device. Lines 32 and 33 are blank."
+    },
+    {
+      "from": 34,
+      "to": 34,
+      "note": "`main` builds and writes the index."
+    },
+    {
+      "from": 35,
+      "to": 36,
+      "note": "L35: a pipeline with defaults: e5-small, no re-ranker, no translator. Only the index is needed here.\nL36: indexes `data/corpus` with the same chunking (160 tokens, 40 overlap, e5 tokenizer) the Python system uses, so chunk ids match."
+    },
+    {
+      "from": 37,
+      "to": 38,
+      "note": "L37: the chunks in index order. That order is also the row order of the vectors.\nL38: `sents` will hold `(chunk index, sentence)` pairs."
+    },
+    {
+      "from": 39,
+      "to": 42,
+      "note": "For every chunk, splits it into sentences and keeps those that could be an answer (at least 4 words, not a question). These are the candidates the browser's extractive answerer will score."
+    },
+    {
+      "from": 43,
+      "to": 43,
+      "note": "Embeds all candidate sentences as **passages**, just like `ExtractiveGenerator` does at question time in Python. Precomputing them saves the browser from embedding dozens of sentences per question."
+    },
+    {
+      "from": 44,
+      "to": 47,
+      "note": "L44: starts the output dict.\nL45: the model the browser must load, the ONNX export of e5-small.\nL46: the Python model that produced the vectors, recorded so a mismatch is visible.\nL47: the vector size (384), needed to cut the decoded float array into rows."
+    },
+    {
+      "from": 48,
+      "to": 52,
+      "note": "The four confidence thresholds from the pipeline: the cosine floor and sure line (fast mode, no re-ranker) and the re-ranker floor and sure line (full mode). Exporting them means the browser shows the same three bands as Python."
+    },
+    {
+      "from": 53,
+      "to": 56,
+      "note": "L53 to L54: comment: full mode uses the same models as the Python re-ranker and translator.\nL55: the re-ranker id and which quantized ONNX file to load (`model_quint8_avx2`, an 8-bit quantized variant shipped in the model's repository), so the browser runs the very same cross-encoder.\nL56: the ONNX exports of the two MarianMT translators, keyed by question language like `MODELS` in `rag/translate.py`."
+    },
+    {
+      "from": 57,
+      "to": 60,
+      "note": "The tokenizer's word lists and Arabic prefixes, so the browser tokenises the **query** exactly like Python tokenised the documents. Sets are sorted into lists because JSON has no set type, and sorting keeps the output stable between runs (useful in git diffs). The prefix tuple keeps its order, which matters: longest prefixes are tried first."
+    },
+    {
+      "from": 61,
+      "to": 64,
+      "note": "One entry per chunk: id, document, page, language, text, and its precomputed BM25 tokens. The browser builds its BM25 statistics from these tokens without re-tokenising documents."
+    },
+    {
+      "from": 65,
+      "to": 68,
+      "note": "L65: all chunk vectors, base64 encoded, row by row in chunk order.\nL66: each candidate sentence with the index of its chunk, so the browser can cite the right passage.\nL67: the sentence vectors, base64 encoded, in the same order as `sentences`.\nL68: closes the dict."
+    },
+    {
+      "from": 69,
+      "to": 71,
+      "note": "L69: the output path, `docs/index.json`, served by GitHub Pages with the demo.\nL70: writes compact JSON: `separators=(\",\", \":\")` removes the spaces after commas and colons to shrink the file, and `ensure_ascii=False` keeps Arabic as UTF-8 characters, which is also smaller than `\\uXXXX` escapes.\nL71: prints the file size in KB and the number of chunks and sentences, a quick sanity check."
+    },
+    {
+      "from": 72,
+      "to": 75,
+      "note": "Runs `main()` only when the file is executed as a script. Lines 72 and 73 are blank."
+    }
+  ]
+}

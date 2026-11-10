@@ -1,0 +1,186 @@
+{
+  "file": "rag/ingest.py",
+  "title": "Ingestion",
+  "stage": "ingest",
+  "summary": "Ingestion is the first stage of the pipeline: it turns files on disk or uploaded bytes into a list of `Page` objects, each holding a document name, a page number and clean text. It reads PDFs with pypdf (one `Page` per PDF page) and TXT/Markdown as a single page, cleans the text, and joins PDF line wraps. It also enforces upload limits, because files from the API are untrusted and a huge file could exhaust memory or CPU.",
+  "key_ideas": [
+    {
+      "term": "Page as the unit of citation",
+      "explain": "Keeping the page number from the very start is what lets an answer later say \"travel-policy.en.pdf, page 2\". Information you drop at ingest cannot be recovered later."
+    },
+    {
+      "term": "PDF line unwrapping",
+      "explain": "PDF text extraction returns the visual lines of the page, so a single sentence arrives split by hard newlines. Joining those wraps gives the sentence splitter and the embedder whole sentences."
+    },
+    {
+      "term": "Upload limits",
+      "explain": "Any endpoint that accepts files needs caps on count, size and work (PDF pages). Without them one request can fill memory or keep the server busy for minutes, a simple denial of service."
+    },
+    {
+      "term": "Frozen dataclass",
+      "explain": "`@dataclass(frozen=True)` generates `__init__`, `__repr__` and `__eq__`, and makes instances immutable, so a `Page` cannot be changed after it is built."
+    }
+  ],
+  "blocks": [
+    {
+      "from": 1,
+      "to": 2,
+      "note": "Module docstring: load PDF, TXT and Markdown into pages of clean text, with limits for untrusted uploads."
+    },
+    {
+      "from": 3,
+      "to": 4,
+      "note": "`from __future__ import annotations` makes every type hint a lazy string. You can then write `list[str]` or `str | None` on older Pythons (3.8, 3.9) and name a class inside its own body."
+    },
+    {
+      "from": 5,
+      "to": 9,
+      "note": "L5: `os` to read limits from environment variables.\nL6: `re` for the line-wrap regex.\nL7: `dataclass` to declare `Page` with little code.\nL8: `Path` from pathlib for file paths that work on Windows and Linux.\nL9: blank."
+    },
+    {
+      "from": 10,
+      "to": 11,
+      "note": "Imports `clean_text`, the readable cleanup from `rag/normalize.py`. Ingest stores readable text, not the matching form."
+    },
+    {
+      "from": 12,
+      "to": 13,
+      "note": "The set of accepted file extensions. A `set` makes the `in` check fast and the error message can list them sorted."
+    },
+    {
+      "from": 14,
+      "to": 15,
+      "note": "Comment explaining the trust model: uploads (API, Space) get all limits; local folders loaded with `load_directory` are trusted, so only the PDF page cap applies to them."
+    },
+    {
+      "from": 16,
+      "to": 16,
+      "note": "Maximum number of files per upload request, default 5. `os.getenv` returns a string (or the default string), so it is wrapped in `int(...)`. The value is read once, at import time."
+    },
+    {
+      "from": 17,
+      "to": 17,
+      "note": "Maximum bytes per uploaded file, default 10 MB (`10 * 1024 * 1024`). The default is wrapped in `str(...)` so that both the environment value and the default are strings that `int` parses the same way."
+    },
+    {
+      "from": 18,
+      "to": 20,
+      "note": "Maximum number of PDF pages, default 200. Page count is a better measure of PDF work than byte size: a small file can contain many pages of text to extract and embed. Lines 19 and 20 are blank."
+    },
+    {
+      "from": 21,
+      "to": 24,
+      "note": "`UploadTooLarge` is a custom exception that subclasses `ValueError`. A dedicated type lets the API catch exactly this case and answer HTTP 413, while other errors still surface normally. The docstring is the whole class body."
+    },
+    {
+      "from": 25,
+      "to": 26,
+      "note": "Comment explaining the wrap rule: a newline followed by a lowercase letter, digit or opening bracket, and not preceded by sentence punctuation, is a line wrap inside a sentence, not a paragraph or heading break."
+    },
+    {
+      "from": 27,
+      "to": 29,
+      "note": "The regex. `(?<![.!?:؟])` is a **negative lookbehind**: the newline must not follow a full stop, !, ?, colon or the Arabic question mark ؟. `(?=[a-z0-9(])` is a **lookahead**: the next character must be lowercase Latin, a digit or `(`. Lookarounds check context without consuming it, so only the newline itself is replaced. Arabic has no lowercase, so Arabic PDF lines are never joined by this rule (the README notes Arabic PDFs are a known limit anyway). Lines 28 and 29 are blank."
+    },
+    {
+      "from": 30,
+      "to": 33,
+      "note": "`unwrap_lines` replaces each wrap newline with a space. \"employees may take 3\\ndays of leave\" becomes one line, so the sentence splitter later sees one sentence. Lines 32 and 33 are blank."
+    },
+    {
+      "from": 34,
+      "to": 34,
+      "note": "`@dataclass(frozen=True)` turns the class below into an immutable record with an auto-generated constructor and equality."
+    },
+    {
+      "from": 35,
+      "to": 40,
+      "note": "L35: `Page` is the output of ingestion and the input of chunking.\nL36: `doc` is the file name. It ends up in chunk ids and citations, for example `travel-policy.en.pdf`.\nL37: `page` is 1-based, the way people count pages. Text files are one page.\nL38: `text` is the cleaned page text.\nL39 to L40: blank."
+    },
+    {
+      "from": 41,
+      "to": 41,
+      "note": "`load_file` signature. `path` may be a `str` or a `Path` (a union type). `name` lets the caller override the display name: uploads are written to a temporary file called `upload.pdf`, but citations must show the user's file name. `max_pages` can override the page cap."
+    },
+    {
+      "from": 42,
+      "to": 44,
+      "note": "L42: normalises the argument to a `Path` object.\nL43: uses the given name or falls back to the file's own name. `or` returns the right side when the left is `None` or empty.\nL44: the extension in lowercase, so `.PDF` and `.pdf` are treated the same."
+    },
+    {
+      "from": 45,
+      "to": 46,
+      "note": "Rejects unsupported types with a clear message. `{suffix!r}` formats with `repr`, so the message shows quotes, for example `'.docx'`."
+    },
+    {
+      "from": 47,
+      "to": 49,
+      "note": "The PDF branch. `from pypdf import PdfReader` is a **lazy import** inside the function: the library is only loaded when a PDF is actually read, which keeps startup and tests light."
+    },
+    {
+      "from": 50,
+      "to": 51,
+      "note": "L50: opens the PDF. `PdfReader` parses the file structure; page text is extracted later, page by page.\nL51: uses the module-wide cap unless the caller passed one. `is None` is used instead of `or`, so an explicit `0` would still be respected."
+    },
+    {
+      "from": 52,
+      "to": 53,
+      "note": "Checks the page count **before** extracting any text, so an oversized PDF is rejected cheaply and the expensive work never starts."
+    },
+    {
+      "from": 54,
+      "to": 54,
+      "note": "A list comprehension that, for every page, extracts the text, cleans it, then joins line wraps. `p.extract_text() or \"\"` guards against `None`/empty results, for example image-only pages. Cleaning runs before unwrapping so that spaces around newlines are already removed and the wrap regex sees a bare `\\n`."
+    },
+    {
+      "from": 55,
+      "to": 56,
+      "note": "L55: builds a `Page` per page with a 1-based number. `enumerate` yields `(index, item)` pairs starting at 0, hence `i + 1`.\nL56: drops pages whose text is empty (for example a scanned page with no text layer), since there is nothing to chunk or cite. Page numbers of the remaining pages stay correct because they were set before filtering."
+    },
+    {
+      "from": 57,
+      "to": 60,
+      "note": "L57: TXT and Markdown branch. Reads the whole file as UTF-8. `errors=\"replace\"` turns invalid bytes into the replacement character instead of crashing on a badly encoded upload.\nL58: returns one cleaned page, or an empty list if the file is only whitespace. The `[...] if cond else []` form is a conditional expression.\nL59 to L60: blank."
+    },
+    {
+      "from": 61,
+      "to": 66,
+      "note": "L61: `check_upload_size` checks a file on disk against the byte cap (used where the upload is already a file, such as the Space).\nL62: `stat().st_size` reads the size from the file system without reading the content.\nL63 to L64: raises `UploadTooLarge` with the name, size and limit.\nL65 to L66: blank."
+    },
+    {
+      "from": 67,
+      "to": 68,
+      "note": "`load_bytes` handles an upload that arrives as bytes in memory (the API). The docstring notes the division of labour: the API already stops reading at the cap, this function checks again."
+    },
+    {
+      "from": 69,
+      "to": 70,
+      "note": "Another lazy import, of `tempfile`, only needed on this path."
+    },
+    {
+      "from": 71,
+      "to": 72,
+      "note": "Defence in depth: even if a caller forgot to cap while reading, data over the limit is rejected here."
+    },
+    {
+      "from": 73,
+      "to": 77,
+      "note": "L73: takes the extension from the client-supplied file name.\nL74: `TemporaryDirectory()` as a context manager creates a private folder and deletes it, with its contents, when the `with` block ends, even on an exception.\nL75: the temporary file is always called `upload<suffix>`. The client's file name is never used as a path, which prevents path traversal tricks like `../../etc/x.pdf`.\nL76: writes the bytes so `PdfReader` and `read_text` can read a real file, reusing `load_file` instead of duplicating its logic.\nL77: `Path(filename).name` keeps only the last path component of the client's name for citations, then returns the pages. The `return` happens inside the `with`, and cleanup still runs."
+    },
+    {
+      "from": 78,
+      "to": 79,
+      "note": "Blank lines."
+    },
+    {
+      "from": 80,
+      "to": 81,
+      "note": "`load_directory` loads every supported file in a folder. `pages: list[Page] = []` is an annotated empty list, so type checkers know what it will hold."
+    },
+    {
+      "from": 82,
+      "to": 85,
+      "note": "L82: `sorted(...)` gives a stable, alphabetical file order. Directory listing order differs between operating systems, and a stable order makes chunk ids and evaluation results reproducible.\nL83: skips files with other extensions (for example a README in the folder).\nL84: appends all pages of the file. `extend` adds the elements of a list; `append` would add the list itself.\nL85: returns all pages of all files."
+    }
+  ]
+}

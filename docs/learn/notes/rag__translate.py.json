@@ -1,0 +1,141 @@
+{
+  "file": "rag/translate.py",
+  "title": "Query translation",
+  "stage": "translate",
+  "summary": "This file translates the user's question into the other language (Arabic to English or English to Arabic) with small MarianMT models. The pipeline then searches with both wordings, so «هل عندنا إجازة الأمومة؟» is also searched as \"Do we have maternity leave?\" and can match the English handbook word for word. A question goes in, its translation (or an empty string if the translation looks broken) comes out.",
+  "key_ideas": [
+    {
+      "term": "Cross-lingual retrieval",
+      "explain": "A multilingual embedder puts Arabic and English in one vector space, but small models do it imperfectly, especially for short questions. Translating the query gives BM25 exact words to match and lets the re-ranker compare same-language text."
+    },
+    {
+      "term": "Machine translation as query expansion",
+      "explain": "The translation does not replace the question; it is an extra query. Results from both are fused, so a bad translation costs less than a missing one."
+    },
+    {
+      "term": "Beam search",
+      "explain": "Generation keeps the 4 most likely partial translations at each step (`num_beams=4`) instead of only the single best word, which usually gives a more fluent result."
+    },
+    {
+      "term": "Degenerate output check",
+      "explain": "Small translation models sometimes loop and repeat a phrase. A cheap length and repetition test catches this and discards the translation."
+    }
+  ],
+  "blocks": [
+    {
+      "from": 1,
+      "to": 12,
+      "note": "Module docstring. It explains the problem (short cross-language questions rank the right passage first only rarely with embeddings alone), the fix (search with both wordings, so BM25 can match \"maternity\" and the cross-encoder compares same-language text), and the models: Helsinki-NLP `opus-mt-ar-en` and `opus-mt-en-ar`, about 300 MB each, loaded on first use, with ONNX exports for the browser."
+    },
+    {
+      "from": 13,
+      "to": 15,
+      "note": "`from __future__ import annotations` makes every type hint a lazy string. You can then write `list[str]` or `str | None` on older Pythons (3.8, 3.9) and name a class inside its own body."
+    },
+    {
+      "from": 16,
+      "to": 18,
+      "note": "L16: `os` to let environment variables override the model ids.\nL17: `lru_cache` to load each model only once.\nL18: blank."
+    },
+    {
+      "from": 19,
+      "to": 20,
+      "note": "`detect_language` decides the translation direction."
+    },
+    {
+      "from": 21,
+      "to": 26,
+      "note": "`MODELS` maps the **question's** language to the model that translates **from** it: an Arabic question uses `opus-mt-ar-en`, an English one uses `opus-mt-en-ar`. Each can be overridden with an environment variable, for example to try a larger model. Lines 25 and 26 are blank."
+    },
+    {
+      "from": 27,
+      "to": 28,
+      "note": "`MarianTranslator` is a callable object. Its docstring states the contract: on any failure it returns `\"\"`, and the pipeline treats an empty string as \"no translation\"."
+    },
+    {
+      "from": 29,
+      "to": 31,
+      "note": "A class attribute `name`, for reporting. Lines 29 and 31 are blank."
+    },
+    {
+      "from": 32,
+      "to": 34,
+      "note": "Stores `max_chars`, the longest input that will be translated (300). Questions are short; a cap keeps translation time bounded if someone sends a long text. Line 34 is blank."
+    },
+    {
+      "from": 35,
+      "to": 37,
+      "note": "`@staticmethod` on top of `@lru_cache(maxsize=2)`: the decorators apply bottom-up, so `lru_cache` wraps the plain function and `staticmethod` exposes it on the class. The cache key is just `model_name`, so the model for each direction is loaded once per process and shared by every translator instance. `maxsize=2` fits exactly the two directions."
+    },
+    {
+      "from": 38,
+      "to": 39,
+      "note": "Lazy import of the Hugging Face classes, so `transformers` and PyTorch load only when translation is first used."
+    },
+    {
+      "from": 40,
+      "to": 41,
+      "note": "Loads the tokenizer and the model and returns them as a tuple. `.eval()` switches the model to inference mode, which turns off dropout so the same input always gives the same output. Line 41 is blank."
+    },
+    {
+      "from": 42,
+      "to": 42,
+      "note": "`__call__` makes an instance callable like a function: `translator(\"...\")`."
+    },
+    {
+      "from": 43,
+      "to": 43,
+      "note": "Trims whitespace and cuts the text to `max_chars` with a slice."
+    },
+    {
+      "from": 44,
+      "to": 45,
+      "note": "Nothing to translate returns an empty string."
+    },
+    {
+      "from": 46,
+      "to": 46,
+      "note": "Picks the model by the question's detected language and unpacks the cached `(tokenizer, model)` pair."
+    },
+    {
+      "from": 47,
+      "to": 47,
+      "note": "Tokenises the text into a PyTorch batch of one (`return_tensors=\"pt\"`). `truncation=True` cuts input that is longer than the model's maximum length instead of failing."
+    },
+    {
+      "from": 48,
+      "to": 48,
+      "note": "Generates the translation. `max_new_tokens=64` caps the output length (questions are short). `num_beams=4` is beam search: it keeps the 4 best partial translations at each step. `no_repeat_ngram_size=3` forbids repeating any 3-token sequence, a direct guard against the looping these small models are prone to. `**batch` unpacks the dict of tensors (`input_ids`, `attention_mask`) into keyword arguments."
+    },
+    {
+      "from": 49,
+      "to": 49,
+      "note": "Decodes the first (only) output sequence back to text. `skip_special_tokens=True` drops markers like `</s>` and padding."
+    },
+    {
+      "from": 50,
+      "to": 52,
+      "note": "Returns the translation only if `plausible` accepts it; otherwise `\"\"`. Lines 51 and 52 are blank."
+    },
+    {
+      "from": 53,
+      "to": 54,
+      "note": "`plausible` is a module-level function so tests can check it without loading a model. The docstring gives the reason: small MT models sometimes loop («الدنيا : الدنيا : ...»), and a looping output is worse than no translation, because it would pull unrelated passages into the results."
+    },
+    {
+      "from": 55,
+      "to": 55,
+      "note": "Splits the translation into words."
+    },
+    {
+      "from": 56,
+      "to": 57,
+      "note": "Rejects an empty output, or one longer than 3 times the question plus 20 characters. A real translation is roughly as long as its source; something far longer is almost certainly a loop."
+    },
+    {
+      "from": 58,
+      "to": 58,
+      "note": "Short outputs (under 6 words) are accepted. Longer ones must have at least half of their words distinct: `len(set(words)) / len(words)` is the share of unique words, and a repeating loop scores low on it."
+    }
+  ]
+}

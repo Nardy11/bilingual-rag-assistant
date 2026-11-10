@@ -1,0 +1,285 @@
+{
+  "file": "rag/generate.py",
+  "title": "Answer generation",
+  "stage": "generate",
+  "summary": "Generation is the \"G\" in RAG: it turns the retrieved passages into an answer with `[n]` citations. Three interchangeable generators share one interface: Gemini, any OpenAI-compatible chat endpoint, and an extractive generator that needs no API key and simply quotes the best one or two sentences from the top passages. The question and the ranked hits go in; a `Generation` (answer text plus the list of cited source numbers) comes out.",
+  "key_ideas": [
+    {
+      "term": "Grounded prompting",
+      "explain": "The LLM gets the passages as numbered sources and is told to use ONLY them, to cite `[n]` after each claim, and to reply with a fixed \"not found\" sentence when the sources do not contain the answer. This is what keeps answers tied to your documents instead of the model's general knowledge."
+    },
+    {
+      "term": "Citation parsing",
+      "explain": "Citations are recovered from the answer text with a regex for `[n]`, and numbers outside the range of real sources are dropped. That turns free text back into structured links to chunk ids and pages."
+    },
+    {
+      "term": "Extractive answering",
+      "explain": "Instead of writing new text, the extractive generator picks existing sentences. Every word of the answer is traceable to a document, it costs nothing to run, and it cannot hallucinate, but it cannot combine facts from several passages."
+    },
+    {
+      "term": "Mixing dense and lexical scores",
+      "explain": "Sentences are scored as 0.75 x cosine + 0.25 x share of question terms present. The cosine handles meaning and cross-language matches; the term share rewards exact words and numbers. E5 cosines sit in a narrow band (about 0.75 to 0.90), so even a 0.25 weight on a 0 to 1 overlap score is a strong tie-breaker."
+    },
+    {
+      "term": "Pluggable backends",
+      "explain": "All generators expose the same `name` and `generate(...)`. The pipeline never knows which one it has, so switching from extractive to Gemini is one environment variable."
+    }
+  ],
+  "blocks": [
+    {
+      "from": 1,
+      "to": 7,
+      "note": "Module docstring. It explains how `get_generator()` chooses a backend from `RAG_LLM`, or from which API keys are set, falling back to the extractive generator. It also states the shared contract: every generator returns text whose citations are `[n]` markers pointing at the numbered sources."
+    },
+    {
+      "from": 8,
+      "to": 10,
+      "note": "`from __future__ import annotations` makes every type hint a lazy string. You can then write `list[str]` or `str | None` on older Pythons (3.8, 3.9) and name a class inside its own body."
+    },
+    {
+      "from": 11,
+      "to": 15,
+      "note": "L11: `os` for API keys and settings from the environment.\nL12: `re` to parse `[n]` citations.\nL13: `dataclass` and `field` to declare `Generation` with a safe list default.\nL14: `Protocol` to declare the generator interface.\nL15: blank."
+    },
+    {
+      "from": 16,
+      "to": 18,
+      "note": "`httpx` is the HTTP client used to call the LLM APIs directly (no vendor SDK needed). NumPy is used for the extractive scoring."
+    },
+    {
+      "from": 19,
+      "to": 23,
+      "note": "Imports `split_sentences` (the extractive generator splits chunks into sentences exactly like the chunker did), the `Embedder` Protocol, `detect_language` and `tokenize`, and the `Hit` type."
+    },
+    {
+      "from": 24,
+      "to": 28,
+      "note": "The \"not found\" message in both languages. It is used in three places: the pipeline's refusal, the LLM prompt (the model must reply with exactly this sentence), and the check that detects such a reply. A fixed string makes the LLM's refusal machine-detectable. Line 28 is blank."
+    },
+    {
+      "from": 29,
+      "to": 36,
+      "note": "The system prompt for LLM generators. Each rule has a job: \"using ONLY the numbered sources\" grounds the answer; \"same language as the question\" makes an Arabic question get an Arabic answer even from an English passage; \"at most three sentences\" keeps answers short; \"cite the source number in square brackets\" produces the `[n]` markers that `_cited` parses; \"reply exactly: {not_found}\" is a second gate after the confidence bands, because the model actually reads the passage instead of measuring similarity. `{not_found}` is a `str.format` placeholder filled per question. The adjacent string literals in parentheses are joined into one string by Python. Lines 35 and 36 are blank."
+    },
+    {
+      "from": 37,
+      "to": 37,
+      "note": "A mutable `@dataclass` for the generator's output."
+    },
+    {
+      "from": 38,
+      "to": 42,
+      "note": "L38: `Generation` is what every generator returns.\nL39: the answer text, with `[n]` markers.\nL40: the 1-based numbers of the sources the answer cites. `field(default_factory=list)` creates a new empty list per instance. A plain `= []` default is rejected by dataclasses because one list would be shared by all instances.\nL41 to L42: blank."
+    },
+    {
+      "from": 43,
+      "to": 48,
+      "note": "L43: `Generator` is the interface as a `Protocol`: any object with a `name` and a matching `generate` method qualifies.\nL44: `name` is reported in every `Answer`, so you can see which backend answered.\nL46: `generate` takes the question, the ranked hits and optional alternative wordings (the translation), and returns a `Generation`. `...` marks the body as a declaration only.\nL45, L47, L48: blank."
+    },
+    {
+      "from": 49,
+      "to": 50,
+      "note": "`is_answer_candidate` decides whether a sentence may be quoted as an answer. The docstring gives the two exclusions: headings (fewer than 4 words) and questions (FAQ titles)."
+    },
+    {
+      "from": 51,
+      "to": 54,
+      "note": "L51: trims whitespace.\nL52: counts **all** tokens (`remove_stopwords=False`) and requires at least 4, which filters out headings like \"Leave policy\". It also rejects sentences ending in `?` or `؟`: in the Arabic product FAQ every entry starts with a question, and quoting the question back is not an answer. `str.endswith` accepts a tuple and is true if any ending matches.\nL53 to L54: blank."
+    },
+    {
+      "from": 55,
+      "to": 60,
+      "note": "`format_sources` renders the hits as numbered sources for the prompt: `[1] (travel-policy.en.pdf, page 2)` followed by the chunk text, with blank lines between sources. The numbers here are the numbers the LLM will cite, and `hits[n - 1]` maps them back. The source name and page help the model, and help you when you read a prompt log. Lines 59 and 60 are blank."
+    },
+    {
+      "from": 61,
+      "to": 62,
+      "note": "`build_messages` builds the chat messages. It first detects the question's language, which picks the \"not found\" sentence for the prompt."
+    },
+    {
+      "from": 63,
+      "to": 68,
+      "note": "L63 to L66: returns the standard chat format, a list of `{role, content}` dicts: a system message with the rules (with the right-language not-found sentence filled in), and a user message with the numbered sources followed by the question. Putting sources before the question is a common choice: the model reads the evidence, then the task.\nL67 to L68: blank."
+    },
+    {
+      "from": 69,
+      "to": 72,
+      "note": "`_cited` extracts citations from the answer. `re.findall(r\"\\[(\\d+)\\]\", text)` finds every `[digits]` and returns the digits (the capture group). The **set comprehension** `{...}` removes duplicates, the condition `1 <= int(m) <= n` drops numbers that do not match a real source (an LLM may write `[7]` when there are only 5 sources), and `sorted` returns them in order. So `\"70 days [1]. Paid in full [1][3].\"` with 5 sources gives `[1, 3]`. Lines 71 and 72 are blank."
+    },
+    {
+      "from": 73,
+      "to": 77,
+      "note": "`OpenAICompatibleGenerator` works with any server that implements the OpenAI `/chat/completions` API: OpenAI itself, Groq, Together, vLLM, Ollama and others. Supporting one widely copied API covers many providers with one class. `name = \"openai\"` identifies it in answers. Lines 75 and 77 are blank."
+    },
+    {
+      "from": 78,
+      "to": 82,
+      "note": "L78: the constructor takes optional overrides; anything not given comes from the environment.\nL79: the base URL, defaulting to OpenAI's. `.rstrip(\"/\")` removes a trailing slash so the URL join on L86 never produces `//`.\nL80: the API key, or an empty string (local servers such as Ollama do not need one).\nL81: the model name, default `gpt-4o-mini`.\nL82: blank."
+    },
+    {
+      "from": 83,
+      "to": 83,
+      "note": "`generate` signature, matching the `Generator` Protocol. `alt_queries` is accepted but not used: the LLM reads the question in its original language."
+    },
+    {
+      "from": 84,
+      "to": 84,
+      "note": "Sends a `Bearer` token only when there is a key. The conditional expression returns an empty dict otherwise."
+    },
+    {
+      "from": 85,
+      "to": 90,
+      "note": "POSTs to `<base_url>/chat/completions` with a 60-second timeout. The JSON body has the model, `temperature: 0` (always pick the most likely next token, which makes answers repeatable, important for evaluation and for a factual QA tool), and the messages from `build_messages`."
+    },
+    {
+      "from": 91,
+      "to": 91,
+      "note": "`raise_for_status()` turns an HTTP error (401 bad key, 429 rate limit, 500) into an exception instead of trying to parse an error body as an answer."
+    },
+    {
+      "from": 92,
+      "to": 95,
+      "note": "L92: reads the answer text at `choices[0].message.content` in the standard response shape, and trims it.\nL93: returns the text and the parsed citations. `len(hits)` bounds the valid source numbers.\nL94 to L95: blank."
+    },
+    {
+      "from": 96,
+      "to": 98,
+      "note": "`GeminiGenerator` calls Google's Gemini API directly over HTTP. Line 98 is blank."
+    },
+    {
+      "from": 99,
+      "to": 102,
+      "note": "L99: optional key and model overrides.\nL100: the key from `GEMINI_API_KEY`. `os.environ[...]` (not `getenv`) raises `KeyError` immediately if it is missing, so a misconfiguration fails at start-up rather than on the first question.\nL101: the model, default `gemini-2.5-flash`.\nL102: blank."
+    },
+    {
+      "from": 103,
+      "to": 103,
+      "note": "`generate` signature, the same as every generator."
+    },
+    {
+      "from": 104,
+      "to": 104,
+      "note": "Reuses `build_messages` and unpacks the two-element list into `system` and `user`, so both backends get the same prompt."
+    },
+    {
+      "from": 105,
+      "to": 105,
+      "note": "The REST endpoint `models/<model>:generateContent` of the `v1beta` Gemini API."
+    },
+    {
+      "from": 106,
+      "to": 115,
+      "note": "POSTs the request. The key goes in the `x-goog-api-key` header rather than in the URL, which keeps it out of URL logs. Gemini's request shape differs from OpenAI's: the system prompt goes in `systemInstruction`, and the user turn goes in `contents` as a list of `parts`, each with `text`. `generationConfig.temperature = 0` makes output repeatable, as with the OpenAI backend."
+    },
+    {
+      "from": 116,
+      "to": 116,
+      "note": "Raises on an HTTP error status."
+    },
+    {
+      "from": 117,
+      "to": 118,
+      "note": "L117: the answer is at `candidates[0].content.parts`, a list of parts.\nL118: joins the text of all parts. `p.get(\"text\", \"\")` skips parts without text instead of failing."
+    },
+    {
+      "from": 119,
+      "to": 121,
+      "note": "Returns the text and its parsed citations. Lines 120 and 121 are blank."
+    },
+    {
+      "from": 122,
+      "to": 128,
+      "note": "`ExtractiveGenerator`: the no-LLM fallback. The docstring gives the scoring formula: 0.75 x cosine(question, sentence) + 0.25 x share of question terms found in the sentence, each taken as the better of the question and its translation. Line 128 is blank."
+    },
+    {
+      "from": 129,
+      "to": 130,
+      "note": "`name = \"extractive\"`. Line 130 is blank."
+    },
+    {
+      "from": 131,
+      "to": 135,
+      "note": "L131: it needs an embedder (the same one as the index), plus two knobs.\nL132: the embedder, used to embed the question and the candidate sentences.\nL133: `max_sentences = 2`: quote at most two sentences.\nL134: `top_chunks = 3`: only look at the top 3 passages. Lower-ranked passages are more likely to be off-topic, and a sentence from them would sound confident while being wrong.\nL135: blank."
+    },
+    {
+      "from": 136,
+      "to": 136,
+      "note": "`generate` signature. Here `alt_queries` is used: the translation helps pick the right sentence."
+    },
+    {
+      "from": 137,
+      "to": 138,
+      "note": "L137: `cands` will hold `(source number, sentence)` pairs.\nL138: a `set` of sentences already seen. Overlapping chunks repeat their boundary sentences (the 40-token overlap from chunking); keeping only the first copy, which comes from the higher-ranked chunk, avoids scoring the same sentence twice and makes it cite the better source."
+    },
+    {
+      "from": 139,
+      "to": 143,
+      "note": "L139: loops over the top 3 hits, numbered from 1 so the number matches the `[n]` source numbering.\nL140: splits the chunk into sentences.\nL141: keeps real answer sentences (not headings, not questions) not seen before.\nL142 to L143: records the sentence and its source number."
+    },
+    {
+      "from": 144,
+      "to": 145,
+      "note": "If no sentence qualifies (for example the passages are only headings), answers \"not found\" in the question's language."
+    },
+    {
+      "from": 146,
+      "to": 146,
+      "note": "The query wordings: the question plus any non-empty translation."
+    },
+    {
+      "from": 147,
+      "to": 148,
+      "note": "L147: embeds the wordings as **queries** (`query: ` prefix), shape `(Q, dim)`.\nL148: embeds the candidate sentences as **passages** (`passage: ` prefix), shape `(S, dim)`."
+    },
+    {
+      "from": 149,
+      "to": 149,
+      "note": "`sv @ qv.T` is a matrix product of shape `(S, Q)`: the cosine of every sentence with every wording (all vectors are unit length). `.max(axis=1)` takes, for each sentence, its best cosine over the wordings. For «هل عندنا إجازة الأمومة؟» the English maternity sentence usually scores higher against \"Do we have maternity leave?\" than against the Arabic."
+    },
+    {
+      "from": 150,
+      "to": 151,
+      "note": "L150: the set of BM25 tokens of each wording.\nL151: the lexical score of each sentence: the share of a wording's terms that appear in the sentence (`&` is set intersection), maximised over wordings. `max(len(qt), 1)` avoids dividing by zero for an all-stopword question. The result becomes a NumPy array so it can be added to `dense` element by element."
+    },
+    {
+      "from": 152,
+      "to": 152,
+      "note": "The combined score: `0.75 * dense + 0.25 * lex`. Dense similarity carries meaning and crosses languages; the term share rewards exact words such as \"maternity\" or the number \"70\". Because e5 cosines vary only a little between sentences, the 0.25 lexical part often decides between two similar-looking candidates."
+    },
+    {
+      "from": 153,
+      "to": 153,
+      "note": "`np.argsort(-score)[: self.max_sentences]` picks the indices of the 2 best sentences; `sorted(...)` then puts them back in candidate order, which is document order within each chunk, so a two-sentence answer reads naturally."
+    },
+    {
+      "from": 154,
+      "to": 154,
+      "note": "Keeps a second sentence only if its score is within 0.08 of the best one; a much weaker sentence would add noise. The `or [int(np.argmax(score))]` fallback guarantees at least one sentence; since the best sentence always passes the filter, it only matters if `max_sentences` were 0."
+    },
+    {
+      "from": 155,
+      "to": 155,
+      "note": "Builds the answer by quoting each chosen sentence followed by its citation marker, for example `Female employees are entitled to 70 days of maternity leave at full pay. [1]`. The extractive answer has the same `[n]` format as an LLM answer, so everything downstream treats them alike."
+    },
+    {
+      "from": 156,
+      "to": 158,
+      "note": "Returns the text and the sorted unique source numbers used (a set comprehension removes duplicates when both sentences come from the same source). Lines 157 and 158 are blank."
+    },
+    {
+      "from": 159,
+      "to": 160,
+      "note": "L159: `get_generator` is a small factory: it returns the right generator object by name.\nL160: the name comes from the argument, else `RAG_LLM`, else empty, lowercased so `Gemini` works too."
+    },
+    {
+      "from": 161,
+      "to": 167,
+      "note": "With no explicit choice it auto-detects: Gemini if `GEMINI_API_KEY` is set, an OpenAI-compatible endpoint if `OPENAI_API_KEY` or `OPENAI_BASE_URL` is set, otherwise extractive. So the system works with zero configuration and upgrades itself when a key is present."
+    },
+    {
+      "from": 168,
+      "to": 174,
+      "note": "Builds the chosen generator. Only the extractive one needs the embedder. An unknown name raises `ValueError` instead of silently falling back, so a typo like `RAG_LLM=gemni` is caught."
+    }
+  ]
+}

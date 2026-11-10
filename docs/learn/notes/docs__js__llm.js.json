@@ -1,0 +1,111 @@
+{
+  "file": "docs/js/llm.js",
+  "title": "Browser LLM calls",
+  "stage": "generate",
+  "summary": "This module is the browser side of the LLM generators in `rag/generate.py`. It builds the same prompt (numbered sources, cite `[n]`, answer in the question's language, reply exactly \"not found\" otherwise), sends it straight from the tab to Gemini or any OpenAI-compatible endpoint with the user's own key, and parses the `[n]` citations back out. The question, the hits and a provider config go in; the answer text, the cited source numbers and the messages sent come out.",
+  "key_ideas": [
+    {
+      "term": "Calling an LLM from the browser",
+      "explain": "`fetch` sends the HTTP request directly from the page, so there is no server of yours in between and the key goes only to the chosen provider. The catch is **CORS**: a page may only read a response from another origin if that server allows it with `Access-Control-Allow-Origin`. Hosted LLM APIs allow it; a local server such as Ollama must be configured to accept the page's origin."
+    },
+    {
+      "term": "Same prompt, same parsing",
+      "explain": "The system prompt and the citation regex are identical to `rag/generate.py`, so an answer generated in the browser behaves like one from the Python service, including the exact \"not found\" sentence the engine checks for."
+    },
+    {
+      "term": "AbortSignal",
+      "explain": "An `AbortController` in the page creates a signal that is passed to `fetch`. Calling `controller.abort()` cancels the request, which `fetch` reports as an `AbortError`. That is how a \"Stop\" button cancels a slow LLM call."
+    },
+    {
+      "term": "Optional chaining",
+      "explain": "`a?.b?.[0]` returns `undefined` instead of throwing when something along the path is missing. It makes parsing an unexpected API response safe without nested `if`s."
+    }
+  ],
+  "blocks": [
+    {
+      "from": 1,
+      "to": 4,
+      "note": "Header comment: the browser side of `rag/generate.py`. The key is sent only to the provider you pick, directly from this tab, and the prompt is the same as the Python service's. Line 4 is blank."
+    },
+    {
+      "from": 5,
+      "to": 6,
+      "note": "`NOT_FOUND`, the same two sentences as Python's `NOT_FOUND`. The engine detects an LLM refusal by checking whether the answer starts with one of them. Line 6 is blank."
+    },
+    {
+      "from": 7,
+      "to": 12,
+      "note": "`SYSTEM_PROMPT`, word for word the Python prompt, built by joining string pieces with `+`. `{not_found}` is a placeholder; JavaScript has no `str.format`, so `buildMessages` fills it with `replace`. Line 12 is blank."
+    },
+    {
+      "from": 13,
+      "to": 18,
+      "note": "L13: `PROVIDERS` describes the choices shown in the settings panel.\nL14: Gemini, default model `gemini-2.5-flash` (the same default as Python); `keyHint` is placeholder text for the key field.\nL15: OpenAI with its base URL and the `gpt-4o-mini` default, as in Python.\nL16: any OpenAI-compatible server (Groq, OpenRouter, Ollama); you type the base URL and model, and the key may be optional.\nL17 to L18: closes the object, blank."
+    },
+    {
+      "from": 19,
+      "to": 22,
+      "note": "`formatSources`, the port of `format_sources`: `map` turns each hit into `[n] (doc, page p)` plus its text, with `i + 1` because sources are numbered from 1, and `join(\"\\n\\n\")` puts blank lines between them. The `[n]` here is the number the model will cite. Line 22 is blank."
+    },
+    {
+      "from": 23,
+      "to": 29,
+      "note": "`buildMessages`, the port of `build_messages`: a system message with the not-found sentence in the question's language (`lang` is passed in, already detected by the engine) and a user message with the sources, then the question. Line 29 is blank."
+    },
+    {
+      "from": 30,
+      "to": 39,
+      "note": "L30: comment: returns `[n]` markers that point at a real source, as sorted, unique 1-based numbers, like `_cited` in Python.\nL31 to L32: `citedSources` starts an empty `Set` to deduplicate.\nL33: `text.matchAll(/\\[(\\d+)\\]/g)` returns an iterator over every match with its capture groups; it needs the `g` flag.\nL34: `m[1]` is the captured digits; `Number(...)` converts to a number.\nL35: keeps only numbers of real sources, so a hallucinated `[7]` with 5 sources is dropped.\nL37: spreads the set into an array and sorts it. The comparator `(a, b) => a - b` matters: JavaScript's default `sort` compares as strings, so `[10, 2]` would stay in that order.\nL36, L38, L39: closing braces and a blank line."
+    },
+    {
+      "from": 40,
+      "to": 47,
+      "note": "L40: `failure` turns a failed HTTP response into a readable `Error`.\nL41 to L44: tries to read the provider's error JSON. `body.error?.message` uses **optional chaining**: if `body.error` is missing it yields `undefined` instead of throwing; `||` then falls back to other fields or `\"\"`.\nL45 to L47: `catch { }` without a variable (optional catch binding) ignores a body that is not JSON."
+    },
+    {
+      "from": 48,
+      "to": 52,
+      "note": "L48: 401 or 403 means the key was refused, with a hint to check the settings.\nL49: 429 means rate limit or quota.\nL50: anything else reports the status and the provider's detail if there was one, using a nested template literal.\nL51 to L52: closes the function, blank."
+    },
+    {
+      "from": 53,
+      "to": 55,
+      "note": "L53: `callGemini(cfg, messages, signal)` calls Gemini; `signal` is an `AbortSignal` so the page can cancel the request.\nL54: **array destructuring** takes the two messages, like Python's `system, user = ...`.\nL55: the same `generateContent` endpoint as `GeminiGenerator`. `encodeURIComponent` escapes the model name, which the user can type, so it cannot break the URL."
+    },
+    {
+      "from": 56,
+      "to": 65,
+      "note": "`await fetch(url, {...})` sends the POST from the browser. `signal` makes it cancellable. The key goes in the `x-goog-api-key` header, not the URL. The body is the same JSON shape as in Python (`systemInstruction`, `contents` with `parts`, `temperature: 0`), serialised with `JSON.stringify`. Because the request goes to another origin with a JSON body and a custom header, the browser first sends a CORS preflight (`OPTIONS`) and only proceeds if Google's API allows it, which it does."
+    },
+    {
+      "from": 66,
+      "to": 70,
+      "note": "L66: `r.ok` is false for any status outside 200 to 299. `throw await failure(r)` waits for the readable error, then throws it, the equivalent of `raise_for_status()` with a friendlier message.\nL67: parses the JSON body (also asynchronous).\nL68: `data.candidates?.[0]?.content?.parts` walks the response with optional chaining (`?.[0]` is the optional form of indexing), falls back to `[]`, joins the text of all parts and trims it. Same path as Python, but it cannot crash on an unexpected shape.\nL69 to L70: closes the function, blank."
+    },
+    {
+      "from": 71,
+      "to": 74,
+      "note": "L71: `callOpenAI` handles OpenAI and every compatible server.\nL72: the configured base URL or OpenAI's, with trailing slashes removed by the regex `/\\/+$/` (Python used `rstrip(\"/\")`).\nL73: JSON content type.\nL74: adds the `Bearer` key only if there is one, so keyless local servers work. HTTP header names are case-insensitive, so lowercase `authorization` is fine."
+    },
+    {
+      "from": 75,
+      "to": 80,
+      "note": "POSTs to `<base>/chat/completions` with the model, `temperature: 0` and the messages, the same body as `OpenAICompatibleGenerator`, and passes the abort `signal`."
+    },
+    {
+      "from": 81,
+      "to": 85,
+      "note": "L81: a non-2xx status becomes a readable error.\nL82: parses the JSON.\nL83: reads `choices[0].message.content` safely with optional chaining and trims it.\nL84 to L85: closes the function, blank."
+    },
+    {
+      "from": 86,
+      "to": 92,
+      "note": "L86: `generate` is the exported entry point the engine calls.\nL87: builds the messages.\nL88: picks the provider with a ternary and awaits the answer.\nL89: an empty answer is treated as an error; the engine catches it and falls back to the extractive answer.\nL90: returns the text, the cited source numbers (as Python's `Generation` does) and the messages, so the page can show the exact prompt that was sent.\nL91 to L92: closes the function, blank."
+    },
+    {
+      "from": 93,
+      "to": 96,
+      "note": "`isConfigured` tells the engine whether an LLM can be used: a model is always required; the compatible option needs a base URL, the others need a key. `Boolean(...)` turns a string into true/false (an empty string is false). If it returns false, the engine uses the extractive answer instead."
+    }
+  ]
+}

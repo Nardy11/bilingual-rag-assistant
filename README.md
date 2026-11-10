@@ -6,18 +6,21 @@ Arabic-aware normalisation), Arabic↔English query translation, cross-encoder r
 (Gemini, any OpenAI-compatible model, or a no-key extractive fallback), with an evaluation on 46 answerable and 24
 unanswerable bilingual questions.
 
-**▶ [Live demo](https://nardy11.github.io/bilingual-rag-assistant/)**: runs entirely in your browser, with no server
-and no API key. It answers within a second in *fast mode*. The translation and re-ranking models (about 340 MB,
-cached after the first visit) then load in the background, and *full mode* answers in about 3 s.
+**▶ [Live demo](https://nardy11.github.io/bilingual-rag-assistant/)**: runs entirely in your browser, with no server.
+Upload your own PDFs, watch every step of retrieval for each answer, read the cited passages inside their documents,
+keep a history with confidence and right/wrong marks, and add a Gemini or OpenAI key to have an LLM write the answer.
+A **[code tour](https://nardy11.github.io/bilingual-rag-assistant/#code)** explains every line of the project next
+to the code. It answers within a second in *fast mode*. The translation and re-ranking models (about 340 MB,
+cached after the first visit) then load in the background, and *full mode* answers in about 3 to 6 s.
 
-[![Live demo](https://img.shields.io/badge/demo-live-0d6b5c)](https://nardy11.github.io/bilingual-rag-assistant/)
+[![Live demo](https://img.shields.io/badge/demo-live-6b45d9)](https://nardy11.github.io/bilingual-rag-assistant/)
 [![CI](https://github.com/Nardy11/bilingual-rag-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/Nardy11/bilingual-rag-assistant/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.10%2B-3776ab)
 ![Retrieval](https://img.shields.io/badge/retrieval-FAISS%20%2B%20BM25%20%2B%20rerank-555)
 ![Languages](https://img.shields.io/badge/languages-Arabic%20%7C%20English-555)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-![Arabic question answered in the browser demo, with the cited passage highlighted](docs/screenshots/demo-ar.png)
+![The Ask view: an Arabic question answered from an English document, with the step-by-step trace](docs/screenshots/app-ask.png)
 
 ## What it does
 
@@ -38,7 +41,25 @@ cached after the first visit) then load in the background, and *full mode* answe
 - **Serves it** as a FastAPI service (`/ingest`, `/ask`), a Docker image, a Gradio app for Hugging Face Spaces, and a
   static GitHub Pages demo that runs the same retrieval in the browser with transformers.js.
 
-![English question in the browser demo](docs/screenshots/demo-en.png)
+## The browser app
+
+[`docs/`](docs) is a static site (GitHub Pages) that runs the same pipeline with transformers.js:
+
+| View | What you can do |
+|---|---|
+| **Ask** | Ask in Arabic or English. A trace shows each step as it runs: the normalised words, the translation, the 384-number question vector, the dense, BM25 and fused rankings, the re-ranker's re-ordering, where the score falls in the confidence bands, and how the answer was picked (sentence scores, or the exact prompt sent to the LLM). |
+| **Documents** | Drop in PDF, TXT or Markdown files. Each one is read (pdf.js), cleaned, chunked with the model's own tokenizer, embedded and indexed on your device, with every step shown. Read any document passage by passage, with the passages and sentences that answers cited marked, and switch documents in or out of the search. |
+| **History** | Your last 100 questions with their answers, match confidence and generator. Mark answers right or wrong and the page reports your measured accuracy. Download it as JSON. |
+| **Code tour** | Every line of `rag/`, the export script and the browser engine, with a note next to it explaining what it does and why. Start from the path a document takes or the path a question takes. |
+| **LLM key** | Gemini, OpenAI or any OpenAI-compatible endpoint. The key goes only to that provider, straight from the tab, with the same prompt as the Python service. Without a key, answers are quoted sentences. |
+
+Match confidence is the top re-ranker score (or cosine in fast mode) mapped onto one scale: below the "not found"
+floor is under 40 %, the "not sure" band is 40 to 75 %, "sure" is 75 % and up. It measures how well the best passage
+matches the question, not whether the answer is right; the right/wrong marks in History measure that.
+
+![The Documents view: an uploaded file read, chunked, embedded and indexed in the browser](docs/screenshots/app-documents.png)
+
+![The code tour: rag/retrieval.py with a note for every few lines](docs/screenshots/app-code-tour.png)
 
 ## Architecture
 
@@ -203,7 +224,11 @@ out of the answer.
   passage, and the `dir` attribute only ever takes the fixed values `rtl` or `ltr`.
 - **Per-session uploads in the Space.** A visitor's documents go into a private copy of the index held in their
   session, so they never change what other visitors see.
-- Tests cover all of the above (`tests/test_api.py`, `tests/test_render.py`).
+- **The browser app keeps your data on your device.** Uploaded files are read and embedded in the tab and stored in
+  IndexedDB; history and settings live in local storage. An LLM key is kept for the tab session (or in local storage
+  if you tick "remember"), and is sent only to the provider you chose.
+- Tests cover all of the above (`tests/test_api.py`, `tests/test_render.py`), and `tests/test_code_tour.py` fails
+  when the code changes without its code-tour notes.
 
 ## Model card and limits
 
@@ -246,6 +271,7 @@ curl -X POST localhost:8000/ingest -H "X-API-Key: change-me" -F "files=@my-polic
 pytest -q && ruff check .                                   # tests need no model download and no key
 python eval/run_eval.py                                     # the evaluation above
 python scripts/export_web_index.py                          # rebuild docs/index.json for the browser demo
+python scripts/build_code_tour.py                           # copy sources for the code tour and check its notes
 ```
 
 Set `GEMINI_API_KEY` (or `OPENAI_API_KEY` / `OPENAI_BASE_URL` / `OPENAI_MODEL`) to switch from extractive answers
@@ -283,7 +309,7 @@ assumed. Contact: [github.com/Nardy11](https://github.com/Nardy11).
 ```
 rag/            normalize · ingest · chunking · embeddings · retrieval · translate · rerank · generate · pipeline · api
 eval/           questions.jsonl (30), natural_questions.jsonl (16), unanswerable.jsonl (24), run_eval.py, results.json
-docs/           GitHub Pages demo: index.html, app.js (browser port of the pipeline), index.json
+docs/           GitHub Pages app: index.html, js/ (engine, text, ingest, llm, ui), css/, index.json, learn/ (code tour)
 space/          Gradio app for Hugging Face Spaces
 data/corpus/    sample documents (fictional, CC BY 4.0)
 tests/          pytest: normalisation, chunking, retrieval, translation and confidence bands, API, rendering

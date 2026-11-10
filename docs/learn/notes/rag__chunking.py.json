@@ -1,0 +1,156 @@
+{
+  "file": "rag/chunking.py",
+  "title": "Chunking",
+  "stage": "chunk",
+  "summary": "Chunking splits each page into passages small enough to embed and to show as a citation. It packs whole sentences into a chunk until a token budget (160 by default) is reached, then starts the next chunk with the last sentences of the previous one (up to 40 tokens of overlap). Pages go in, a list of `Chunk` records with stable ids like `travel-policy.en.pdf#p2-c0` comes out. Chunk size is a core RAG trade-off: small chunks are precise but lose context, large chunks keep context but blur the embedding.",
+  "key_ideas": [
+    {
+      "term": "Sentence-aware chunking",
+      "explain": "Cutting at fixed character offsets splits sentences in half, so the embedding and the quoted answer get broken fragments. Packing whole sentences keeps every chunk readable and every quote complete."
+    },
+    {
+      "term": "Chunk overlap",
+      "explain": "If a fact sits at a chunk boundary, the sentence before it may be the context that makes it findable. Repeating the last ~40 tokens at the start of the next chunk means a boundary never hides that context."
+    },
+    {
+      "term": "Counting with the model's tokenizer",
+      "explain": "Embedding models read subword tokens, not words. Arabic words often split into several tokens, so a word count underestimates length. Counting with the embedder's own tokenizer guarantees a chunk never exceeds what the model actually sees."
+    },
+    {
+      "term": "Stable chunk ids",
+      "explain": "The id `<doc>#p<page>-c<n>` depends only on the document, page and position, so citations, evaluation gold labels and the browser index all refer to the same chunk across runs."
+    }
+  ],
+  "blocks": [
+    {
+      "from": 1,
+      "to": 8,
+      "note": "The module docstring describes the algorithm in plain words: pack sentences up to `max_tokens`, start the next chunk with the last sentences of the previous one up to `overlap_tokens`, count tokens with the embedding model's tokenizer when possible, and split any single sentence that is too long on word boundaries."
+    },
+    {
+      "from": 9,
+      "to": 10,
+      "note": "`from __future__ import annotations` makes every type hint a lazy string. You can then write `list[str]` or `str | None` on older Pythons (3.8, 3.9) and name a class inside its own body."
+    },
+    {
+      "from": 11,
+      "to": 14,
+      "note": "L11: `re` for sentence and heading regexes.\nL12: `Callable` from `collections.abc`, used to type the token counter function.\nL13: `asdict` converts a dataclass to a dict (for JSON); `dataclass` declares `Chunk`.\nL14: blank."
+    },
+    {
+      "from": 15,
+      "to": 17,
+      "note": "Imports `Page` (the input type) and `detect_language`, which tags each chunk as Arabic or English."
+    },
+    {
+      "from": 18,
+      "to": 18,
+      "note": "`_SENT_END` is the sentence boundary regex, used with `re.split`. Two alternatives: whitespace that follows `.`, `!`, `?`, the Arabic question mark `؟` or the CJK full stop `。` (the lookbehind `(?<=...)` checks the punctuation without removing it, so the sentence keeps its full stop), **or** one or more newlines. Newlines count as boundaries because Markdown headings, list items and paragraphs are separate units."
+    },
+    {
+      "from": 19,
+      "to": 20,
+      "note": "`_HEADING` matches Markdown heading markers at the start of a line (`# `, `## `). They are removed so a heading becomes plain text like \"Leave policy\" instead of \"## Leave policy\"."
+    },
+    {
+      "from": 21,
+      "to": 23,
+      "note": "A **type alias**: `TokenCounter` is any function that takes a string and returns an int. Chunking does not care whether that is the e5 tokenizer or a simple regex count, which is how tests run without a model."
+    },
+    {
+      "from": 24,
+      "to": 27,
+      "note": "`simple_token_count` is the fallback counter: every run of word characters is one token, and every single punctuation mark is one token. It is a rough stand-in for a real tokenizer, used when the embedder has no `count_tokens` (the test `HashingEmbedder`). Lines 26 and 27 are blank."
+    },
+    {
+      "from": 28,
+      "to": 28,
+      "note": "`@dataclass(frozen=True)`: chunks are immutable records, so nothing downstream can edit a chunk's text after its embedding was computed."
+    },
+    {
+      "from": 29,
+      "to": 35,
+      "note": "L29: `Chunk` is the unit that is embedded, indexed, retrieved and cited.\nL30: `id` is `<doc>#p<page>-c<n>`, for example `employee-handbook.en.md#p1-c3`. It must stay stable for citations and gold labels.\nL31 to L32: the source document and page, copied from the `Page`.\nL33: the chunk text, sentences joined by newlines.\nL34: `lang`, `'ar'` or `'en'`, detected from the chunk text.\nL35: blank."
+    },
+    {
+      "from": 36,
+      "to": 39,
+      "note": "`to_dict` returns the chunk as a plain dict via `asdict`. `HybridIndex.save` uses it to write `chunks.json`, and `Chunk(**c)` rebuilds it on load. Lines 38 and 39 are blank."
+    },
+    {
+      "from": 40,
+      "to": 40,
+      "note": "`split_sentences` returns the list of sentences in a text. The extractive generator and the web index export also use it, so a \"sentence\" means the same thing everywhere."
+    },
+    {
+      "from": 41,
+      "to": 42,
+      "note": "L41: a **generator expression** (parentheses, lazy): for every piece produced by splitting on `_SENT_END`, remove a leading Markdown heading marker, then `strip(\" >-*\\t\")` removes spaces, blockquote `>`, list bullets `-` and `*`, and tabs from both ends.\nL42: a list comprehension with a condition keeps only non-empty pieces. Example: `\"# Leave policy\\n\\n- Staff get 70 days. Sick leave is paid? Yes.\"` gives `['Leave policy', 'Staff get 70 days.', 'Sick leave is paid?', 'Yes.']`."
+    },
+    {
+      "from": 43,
+      "to": 45,
+      "note": "`_split_long` handles a single sentence longer than the budget, for example a long table row or a run-on PDF line. Lines 43 and 44 are blank; line 45 is the signature: the sentence, the budget and the counter."
+    },
+    {
+      "from": 46,
+      "to": 51,
+      "note": "L46: tuple unpacking sets three variables at once: the words, the output pieces, and the words in the current piece.\nL47: walks the words in order.\nL48: if adding this word would push the current piece over the budget (and the piece is not empty), the piece is finished. The count is re-run on the joined text because subword tokens are not additive per word in general.\nL49 to L50: saves the finished piece and starts a new one.\nL51: adds the word to the current piece. Because of the `if cur` guard, a single word longer than the budget still becomes its own piece instead of looping forever."
+    },
+    {
+      "from": 52,
+      "to": 56,
+      "note": "After the loop, the last partial piece is saved, and the list of pieces is returned. Lines 55 and 56 are blank."
+    },
+    {
+      "from": 57,
+      "to": 62,
+      "note": "`chunk_pages` signature. Defaults are 160 tokens per chunk and 40 tokens of overlap, and the counter defaults to `simple_token_count`. `RAGPipeline.add_pages` passes the e5 tokenizer instead. 160 tokens is well under e5-small's 512-token limit, which keeps each chunk focused on a topic or two: a large chunk averages many topics into one vector and matches every question a little and none of them well."
+    },
+    {
+      "from": 63,
+      "to": 64,
+      "note": "Guards a configuration error. If the overlap were as large as the chunk, the next chunk could start where the previous one started and the loop would never advance."
+    },
+    {
+      "from": 65,
+      "to": 65,
+      "note": "The result list for all pages."
+    },
+    {
+      "from": 66,
+      "to": 70,
+      "note": "L66: chunks are built page by page, so a chunk never spans two pages and its citation always names one page.\nL67: `sents` holds `(sentence, token_count)` pairs, counted once and reused, because tokenizing is the slow part.\nL68: splits the page into sentences.\nL69: a sentence within budget stays whole; a longer one is split on words. The conditional expression picks between a one-item list and the split pieces.\nL70: `extend` with a generator expression adds each piece with its token count."
+    },
+    {
+      "from": 71,
+      "to": 72,
+      "note": "L71: `n` numbers the chunks on this page (the `c<n>` in the id); `i` is the index of the first sentence of the next chunk.\nL72: loop until every sentence has been placed."
+    },
+    {
+      "from": 73,
+      "to": 77,
+      "note": "L73: starts a new chunk: its sentences `cur`, its token `size`, and a cursor `j` starting at `i`.\nL74: keeps adding sentences while they fit. `not cur or ...` always admits the first sentence, so the loop makes progress even in an edge case.\nL75 to L77: adds the sentence text, adds its token count, moves the cursor."
+    },
+    {
+      "from": 78,
+      "to": 80,
+      "note": "L78: joins the sentences with newlines. Newlines keep the boundaries, so `split_sentences` on a chunk later finds the same sentences.\nL79: creates the `Chunk` with its id `f\"{page.doc}#p{page.page}-c{n}\"`, for example `travel-policy.en.pdf#p2-c0`, and the detected language of this chunk's text.\nL80: next chunk number on this page."
+    },
+    {
+      "from": 81,
+      "to": 82,
+      "note": "If the last sentence was used, the page is done. Without this `break`, the overlap step below would start one more chunk made only of overlap sentences already seen."
+    },
+    {
+      "from": 83,
+      "to": 88,
+      "note": "L83: the comment states the overlap rule.\nL84: `back` is the overlap size collected so far; `k` starts at `j`, the first unused sentence.\nL85: steps backwards over the last sentences of the current chunk while they fit in `overlap_tokens`. `k - 1 > i` stops before the chunk's first sentence, so the next chunk always starts at least one sentence later: progress is guaranteed.\nL86 to L87: moves `k` back and adds that sentence's tokens to the overlap.\nL88: the next chunk starts at `k`, so it repeats the last sentences of this one. A sentence longer than 40 tokens is never repeated, because the overlap is made of whole sentences only."
+    },
+    {
+      "from": 89,
+      "to": 89,
+      "note": "Returns all chunks of all pages, in document and page order."
+    }
+  ]
+}

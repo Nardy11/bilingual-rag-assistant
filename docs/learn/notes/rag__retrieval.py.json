@@ -1,0 +1,316 @@
+{
+  "file": "rag/retrieval.py",
+  "title": "Hybrid retrieval",
+  "stage": "search",
+  "summary": "This is the search engine of the system. `HybridIndex` stores every chunk twice: as a dense vector (searched by cosine similarity with FAISS or a NumPy matrix product) and as BM25 tokens (searched by term matching). `hybrid_search` runs both and merges the two rankings with reciprocal rank fusion (RRF); `fuse_hits` applies the same fusion across the original question and its translation. A query string goes in, a ranked list of `Hit` objects (chunk, score, cosine) comes out.",
+  "key_ideas": [
+    {
+      "term": "Dense vs lexical retrieval",
+      "explain": "Dense retrieval matches meaning: it handles paraphrase and even crosses languages. BM25 matches exact terms: it is strong on numbers, names and rare words that a small embedding model blurs. Each catches what the other misses, which is why both are used."
+    },
+    {
+      "term": "BM25",
+      "explain": "BM25 scores a chunk by summing, over query terms, an IDF weight (rare terms count more) times a saturating term-frequency factor. `k1` (1.5 here) controls how fast repeated occurrences stop adding score, and `b` (0.75) controls how much long chunks are penalised for having more words."
+    },
+    {
+      "term": "Reciprocal rank fusion",
+      "explain": "RRF scores each chunk as the sum of `1 / (60 + rank)` over the rankings it appears in. It uses only ranks, so it never has to compare a cosine of 0.83 with a BM25 score of 7.2, scales that have no common unit. The constant 60 flattens the curve so that being 1st vs 3rd matters, but a single list cannot dominate."
+    },
+    {
+      "term": "FAISS IndexFlatIP",
+      "explain": "An exact (brute-force) inner-product index. With unit vectors, inner product equals cosine similarity, so this is exact cosine search. Flat is right for a corpus of tens or thousands of chunks; approximate indexes only pay off at much larger scale."
+    }
+  ],
+  "blocks": [
+    {
+      "from": 1,
+      "to": 2,
+      "note": "Module docstring: dense (FAISS), lexical (BM25) and hybrid retrieval with reciprocal rank fusion."
+    },
+    {
+      "from": 3,
+      "to": 4,
+      "note": "`from __future__ import annotations` makes every type hint a lazy string. You can then write `list[str]` or `str | None` on older Pythons (3.8, 3.9) and name a class inside its own body."
+    },
+    {
+      "from": 5,
+      "to": 8,
+      "note": "L5: `json` to save chunk metadata.\nL6: `dataclass` to declare `Hit`.\nL7: `Path` for the save/load directory.\nL8: blank."
+    },
+    {
+      "from": 9,
+      "to": 12,
+      "note": "L9: `faiss` is Facebook AI Similarity Search, a library of vector indexes written in C++.\nL10: NumPy for vector maths and sorting.\nL11: `BM25Okapi` from `rank_bm25`, a small pure-Python BM25 implementation.\nL12: blank."
+    },
+    {
+      "from": 13,
+      "to": 16,
+      "note": "Imports `Chunk` (what is indexed), the `Embedder` Protocol (how queries and passages become vectors) and `tokenize` (the same BM25 tokenizer used on both documents and queries, so the token forms always agree)."
+    },
+    {
+      "from": 17,
+      "to": 19,
+      "note": "`RRF_K = 60` is the constant in reciprocal rank fusion. 60 is the value from the original RRF paper (Cormack, Clarke and Buettcher, 2009) and works well without tuning. Lines 18 and 19 are blank."
+    },
+    {
+      "from": 20,
+      "to": 20,
+      "note": "A plain (mutable) `@dataclass`: hits are created per query and thrown away, so immutability is not needed."
+    },
+    {
+      "from": 21,
+      "to": 26,
+      "note": "L21: `Hit` is one search result.\nL22: the chunk that was found.\nL23: `score` means different things depending on who produced the hit: cosine, BM25, RRF or the re-ranker score. Only compare scores from the same method.\nL24: `dense` always holds the cosine similarity to the query, defaulting to 0.0. It survives fusion so the pipeline can still use cosine for confidence when there is no re-ranker.\nL25 to L26: blank."
+    },
+    {
+      "from": 27,
+      "to": 28,
+      "note": "`rrf` signature. `rankings` is a list of rankings, each a list of chunk positions, best first. It returns a dict from chunk position to fused score."
+    },
+    {
+      "from": 29,
+      "to": 35,
+      "note": "L29: an empty score table.\nL30: for each ranking (for example the dense ranking and the BM25 ranking).\nL31: `enumerate(..., start=1)` gives ranks 1, 2, 3 instead of 0, 1, 2.\nL32: adds `1 / (60 + rank)`. Rank 1 adds 1/61 (about 0.0164), rank 10 adds 1/70 (about 0.0143). A chunk ranked well in **both** lists collects two contributions and beats a chunk that only one method liked. `scores.get(idx, 0.0)` reads the current value or 0 for a new chunk.\nL33: returns the fused scores. Lines 34 and 35 are blank."
+    },
+    {
+      "from": 36,
+      "to": 40,
+      "note": "`fuse_hits` signature and docstring. It applies RRF to whole hit lists, keyed by chunk **id**, because the lists come from separate searches (the question and its translation). The docstring explains that each fused hit keeps the best cosine any query reached, for the no-reranker confidence check."
+    },
+    {
+      "from": 41,
+      "to": 42,
+      "note": "Two dicts keyed by chunk id: the fused RRF score, and the `Hit` with the highest cosine seen so far."
+    },
+    {
+      "from": 43,
+      "to": 46,
+      "note": "L43: for each hit list (one per query wording).\nL44: rank from 1.\nL45: the chunk id, for example `employee-handbook.en.md#p1-c3`.\nL46: the RRF contribution of this rank, exactly as in `rrf`."
+    },
+    {
+      "from": 47,
+      "to": 48,
+      "note": "Keeps the hit with the higher cosine. «هل عندنا إجازة الأمومة؟» may reach a higher cosine with the maternity passage through its English translation than through the Arabic question; the fused hit keeps that better value."
+    },
+    {
+      "from": 49,
+      "to": 49,
+      "note": "Sorts chunk ids by fused score, highest first, and keeps the top `k`. `key=scores.get` uses the dict's `get` method as the sort key, a compact idiom for \"sort keys by their values\"."
+    },
+    {
+      "from": 50,
+      "to": 52,
+      "note": "Builds the fused hits: the chunk, its RRF score, and its best cosine. Lines 51 and 52 are blank."
+    },
+    {
+      "from": 53,
+      "to": 53,
+      "note": "`HybridIndex` holds the chunks, their vectors, a FAISS index and a BM25 index, and offers dense, lexical and hybrid search."
+    },
+    {
+      "from": 54,
+      "to": 54,
+      "note": "The constructor takes any object that satisfies the `Embedder` Protocol."
+    },
+    {
+      "from": 55,
+      "to": 56,
+      "note": "Stores the embedder and starts an empty chunk list. Position `i` in `self.chunks` is also row `i` of the vectors and document `i` in BM25; the three must stay aligned."
+    },
+    {
+      "from": 57,
+      "to": 57,
+      "note": "An empty `(0, dim)` float32 matrix. Starting with the right shape lets `np.vstack` append rows later without special cases."
+    },
+    {
+      "from": 58,
+      "to": 58,
+      "note": "`faiss.IndexFlatIP(dim)` is an exact inner-product index. Because every vector is unit length, inner product **is** cosine similarity: for unit vectors `a . b = |a| |b| cos(theta) = cos(theta)`. \"Flat\" means it compares the query with every stored vector, which is exact and fast enough for this corpus (26 chunks)."
+    },
+    {
+      "from": 59,
+      "to": 60,
+      "note": "The BM25 index starts as `None` and is built when chunks are added. `BM25Okapi | None` is a union type. Line 60 is blank."
+    },
+    {
+      "from": 61,
+      "to": 61,
+      "note": "A section comment: the building methods follow."
+    },
+    {
+      "from": 62,
+      "to": 62,
+      "note": "`add` appends chunks. `vectors` is optional: pass precomputed vectors (when loading a saved index or forking one) to skip re-embedding."
+    },
+    {
+      "from": 63,
+      "to": 64,
+      "note": "Adding nothing is a no-op. It also avoids building BM25 over an empty corpus."
+    },
+    {
+      "from": 65,
+      "to": 66,
+      "note": "If no vectors were given, embed the chunk texts as **passages** (`passage: ` prefix for E5)."
+    },
+    {
+      "from": 67,
+      "to": 67,
+      "note": "`np.ascontiguousarray(..., dtype=np.float32)` ensures a C-contiguous float32 array, which is the memory layout FAISS requires. Vectors loaded from disk or sliced from another array might not be."
+    },
+    {
+      "from": 68,
+      "to": 70,
+      "note": "L68: appends the chunks.\nL69: appends the vectors to the matrix with `np.vstack`. Copying the matrix on each add is fine at this scale.\nL70: adds the vectors to the FAISS index. FAISS numbers them in insertion order, which matches the chunk positions."
+    },
+    {
+      "from": 71,
+      "to": 72,
+      "note": "Rebuilds BM25 over **all** chunks, not only the new ones. BM25's IDF and average chunk length depend on the whole collection, so adding documents changes every score. `tokenize(c.text) or [\"∅\"]` gives a chunk with no tokens a placeholder token, so the corpus keeps one entry per chunk (positions stay aligned with `self.chunks`) and no document has zero length. Line 72 is blank."
+    },
+    {
+      "from": 73,
+      "to": 75,
+      "note": "`__len__` makes `len(index)` return the number of chunks. A side effect worth knowing: an empty index is now **falsy**, so `if index:` is false for it. `RAGPipeline.add_pages` has a comment about exactly this trap. Line 75 is blank."
+    },
+    {
+      "from": 76,
+      "to": 76,
+      "note": "A section comment: the search methods follow."
+    },
+    {
+      "from": 77,
+      "to": 79,
+      "note": "`_qvec` embeds a single query with the `query: ` prefix and returns a `(1, dim)` matrix. Line 79 is blank."
+    },
+    {
+      "from": 80,
+      "to": 80,
+      "note": "`dense_search` is pure vector search through FAISS. `qvec` can be passed in when the caller already embedded the query."
+    },
+    {
+      "from": 81,
+      "to": 82,
+      "note": "An empty index returns no hits instead of asking FAISS for results."
+    },
+    {
+      "from": 83,
+      "to": 83,
+      "note": "Embeds the query unless a vector was provided."
+    },
+    {
+      "from": 84,
+      "to": 84,
+      "note": "`self._faiss.search(qvec, k)` returns two arrays of shape `(number of queries, k)`: the similarity scores, best first, and the row positions. `min(k, len(self.chunks))` never asks for more results than exist."
+    },
+    {
+      "from": 85,
+      "to": 86,
+      "note": "Builds hits from the first (only) query row. `zip` pairs each score with its position. FAISS uses `-1` as a position when it has fewer results than asked; `if i >= 0` filters that out defensively. The cosine is stored both as `score` and as `dense`. Line 86 is blank."
+    },
+    {
+      "from": 87,
+      "to": 88,
+      "note": "`bm25_scores` returns one BM25 score per chunk. The query is tokenised with exactly the same function as the documents: «الفلتر» becomes `فلتر` on both sides, \"days\" becomes \"day\"."
+    },
+    {
+      "from": 89,
+      "to": 90,
+      "note": "If BM25 is not built yet or the query has no tokens (for example only stopwords), returns one zero per chunk. The guard also avoids calling `get_scores` on `None` before any chunk was added."
+    },
+    {
+      "from": 91,
+      "to": 92,
+      "note": "`get_scores` computes, for every chunk, the sum over query terms of `IDF(term) * tf * (k1 + 1) / (tf + k1 * (1 - b + b * len / avg_len))`. With `rank_bm25` defaults `k1 = 1.5` (term-frequency saturation: the 5th \"leave\" adds much less than the 1st) and `b = 0.75` (length normalisation: long chunks need more matches). IDF is `log((N - n + 0.5) / (n + 0.5))`, which is **negative** when a term appears in more than half the chunks; `BM25Okapi` replaces negative IDFs with a floor of `0.25 * average IDF` (its `epsilon`), so a very common word adds a little score instead of subtracting it. Line 92 is blank."
+    },
+    {
+      "from": 93,
+      "to": 94,
+      "note": "`bm25_search` is lexical-only search. It first computes all scores."
+    },
+    {
+      "from": 95,
+      "to": 95,
+      "note": "`np.argsort(-scores)` returns positions sorted by descending score (sorting the negated array ascending is the usual NumPy trick for descending order). `[:k]` keeps the top k, and the condition drops chunks with score 0, which share no term with the query."
+    },
+    {
+      "from": 96,
+      "to": 97,
+      "note": "Returns the hits with their BM25 scores. `dense` stays at its default 0.0 because no cosine was computed. Line 97 is blank."
+    },
+    {
+      "from": 98,
+      "to": 98,
+      "note": "`hybrid_search` combines dense and BM25. `k` is how many results to return; `pool` is how deep each ranking goes before fusion (30)."
+    },
+    {
+      "from": 99,
+      "to": 100,
+      "note": "An empty index returns no hits."
+    },
+    {
+      "from": 101,
+      "to": 102,
+      "note": "L101: embeds the query once.\nL102: computes the cosine with **every** chunk in one step with the `@` matrix product: `(n, dim) @ (dim,)` gives `n` dot products. This is the same exact computation `IndexFlatIP` does, done in NumPy because the full array of cosines is needed (to record `dense` for every fused hit, including ones that only BM25 found)."
+    },
+    {
+      "from": 103,
+      "to": 103,
+      "note": "The dense ranking: chunk positions sorted by descending cosine, top `pool`."
+    },
+    {
+      "from": 104,
+      "to": 105,
+      "note": "The BM25 ranking: positions sorted by descending BM25 score, top `pool`, keeping only chunks with a positive score. A zero-score chunk did not match any term, and including it would give it free RRF points."
+    },
+    {
+      "from": 106,
+      "to": 107,
+      "note": "L106: fuses the two rankings with RRF. A chunk in both lists gets two contributions.\nL107: sorts positions by fused score and keeps the top `k`."
+    },
+    {
+      "from": 108,
+      "to": 109,
+      "note": "Returns hits with the RRF score as `score` and the cosine as `dense`. `float(...)` turns NumPy scalars into plain Python floats, which serialise cleanly to JSON in the API. Line 109 is blank."
+    },
+    {
+      "from": 110,
+      "to": 110,
+      "note": "A section comment: saving and loading follow."
+    },
+    {
+      "from": 111,
+      "to": 113,
+      "note": "`save` writes the index to a directory, creating it (and parents) if needed. `exist_ok=True` means an existing directory is not an error."
+    },
+    {
+      "from": 114,
+      "to": 114,
+      "note": "Saves the vector matrix in NumPy's binary `.npy` format. The FAISS index itself is not saved: a flat index is only these vectors, so it is rebuilt on load."
+    },
+    {
+      "from": 115,
+      "to": 115,
+      "note": "Collects metadata: the model name (with `getattr(..., \"?\")` in case an embedder has none) and every chunk as a dict. Recording the model matters: vectors from one model are meaningless to another."
+    },
+    {
+      "from": 116,
+      "to": 117,
+      "note": "Writes the metadata as UTF-8 JSON. `ensure_ascii=False` keeps Arabic as readable characters instead of `\\u0627` escapes. Line 117 is blank."
+    },
+    {
+      "from": 118,
+      "to": 119,
+      "note": "`@classmethod` makes `load` an alternative constructor: it receives the class as `cls` and returns a new instance, called as `HybridIndex.load(dir, embedder)`. The return annotation names the class inside its own body, which works because of the `__future__` import."
+    },
+    {
+      "from": 120,
+      "to": 121,
+      "note": "Reads and parses `chunks.json`."
+    },
+    {
+      "from": 122,
+      "to": 124,
+      "note": "L122: creates an empty index with the given embedder. It must be the same model that produced the saved vectors.\nL123: rebuilds `Chunk` objects with `Chunk(**c)` (dict unpacking into keyword arguments) and adds them with the saved vectors, so no re-embedding happens. This also rebuilds FAISS and BM25.\nL124: returns the loaded index."
+    }
+  ]
+}

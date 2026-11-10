@@ -1,0 +1,211 @@
+{
+  "file": "docs/js/text.js",
+  "title": "Browser text rules",
+  "stage": "normalise",
+  "summary": "This module is the JavaScript port of `rag/normalize.py`, the line-unwrap rule of `rag/ingest.py` and the chunker of `rag/chunking.py`. The browser demo needs it twice: to tokenise your question for BM25 exactly the way Python tokenised the sample documents, and to chunk files you upload in the browser with the same rules. Text goes in; normalised text, BM25 tokens, a language code, sentences or chunks come out, identical to what the Python functions return.",
+  "key_ideas": [
+    {
+      "term": "One rule set, two languages",
+      "explain": "If the browser tokenised «الإجازة» differently from Python, BM25 would compare different token forms and miss matches. That is why every regex and step here mirrors `rag/normalize.py`, and why the stopword lists and prefixes are loaded from `index.json` instead of being copied by hand."
+    },
+    {
+      "term": "ES modules",
+      "explain": "`export function ...` makes a function importable by other files with `import { tokenize } from \"./text.js\"`. Each `.js` file is its own module with its own scope, like a Python module."
+    },
+    {
+      "term": "Regex flags in JavaScript",
+      "explain": "A JS regex literal is `/pattern/flags`. `g` (global) makes `match` return every match and `replace` replace every match, which Python's `findall` and `sub` do by default. `u` turns on Unicode mode, needed for property classes like `\\p{L}` (any letter in any script)."
+    },
+    {
+      "term": "Lookbehind",
+      "explain": "`(?<=...)` and `(?<!...)` check what comes before a position without consuming it, exactly as in Python. All current browsers support them, so the sentence and line-wrap rules port unchanged."
+    }
+  ],
+  "blocks": [
+    {
+      "from": 1,
+      "to": 4,
+      "note": "Header comment: this file is a rule-for-rule port of three Python modules, so uploaded files get the same cleaning, sentence splitting, chunking and BM25 tokenisation as the documents indexed in Python. Line 4 is blank."
+    },
+    {
+      "from": 5,
+      "to": 5,
+      "note": "Section comment: the normalisation part, mirroring `rag/normalize.py`."
+    },
+    {
+      "from": 6,
+      "to": 8,
+      "note": "L6: `TASHKEEL`, the same diacritic code-point ranges as `_TASHKEEL` in `rag/normalize.py`, written as literal characters. The `g` flag makes `replace` remove every occurrence; without it JavaScript replaces only the first match.\nL7: `TATWEEL`, the kashida ـ, also global.\nL8: `INVISIBLE`, zero-width and bidi control characters, the same ranges as Python's `_INVISIBLE`."
+    },
+    {
+      "from": 9,
+      "to": 9,
+      "note": "`ARABIC_DIGITS` matches Arabic-Indic digits ٠ to ٩ and Extended Arabic-Indic digits ۰ to ۹. Python uses a `str.maketrans` table; JavaScript has no translate method, so a regex plus a replacement function (`digitToAscii` below) does the same job."
+    },
+    {
+      "from": 10,
+      "to": 10,
+      "note": "`TOKEN` is identical to Python's `_TOKEN`: a number with optional decimal part, a run of lowercase Latin letters, or a run of Arabic letters ء to ي. With the `g` flag, `str.match(TOKEN)` returns all matches, like `re.findall`."
+    },
+    {
+      "from": 11,
+      "to": 12,
+      "note": "`ARABIC_CHAR` tests whether a character is in the Arabic block U+0600 to U+06FF. No `g` flag here on purpose: a global regex used with `.test()` remembers its position between calls (`lastIndex`), which causes confusing alternating results. Line 12 is blank."
+    },
+    {
+      "from": 13,
+      "to": 15,
+      "note": "`let` declares module-level variables that can be reassigned later (`const` could not be). They start empty and are filled by `configure` once `index.json` is loaded. `new Set()` is JavaScript's set type, with `has`, `add` and `size`. Line 15 is blank."
+    },
+    {
+      "from": 16,
+      "to": 21,
+      "note": "L16 to L17: the comment gives the reason: the lists come from `index.json`, written by `scripts/export_web_index.py`, so Python and the browser always share them.\nL18: `configure({ stopwords_en, stopwords_ar, ar_prefixes })` uses **object destructuring** in the parameter list: the function receives the whole config object and pulls out just these three properties by name.\nL19: builds one `Set` of both stopword lists. `[...a, ...b]` is the **spread** syntax: it expands both arrays into a new array, like `[*a, *b]` in Python.\nL20: keeps the prefix list in Python's order (longest first), which matters because the first matching prefix wins.\nL21: end of function."
+    },
+    {
+      "from": 22,
+      "to": 27,
+      "note": "L22: blank.\nL23: `digitToAscii` is the replacement function for `ARABIC_DIGITS`: `replace` calls it with each matched digit.\nL24: `charCodeAt(0)` returns the UTF-16 code of the character, for example 0x0663 for ٣.\nL25: Extended digits start at 0x06F0 and Arabic-Indic digits at 0x0660, so subtracting the right base gives the digit value 0 to 9, which `String(...)` turns into `\"3\"`.\nL26 to L27: end of function, blank."
+    },
+    {
+      "from": 28,
+      "to": 29,
+      "note": "`normalizeForMatch` is the port of Python's `normalize_for_match`, written as a **method chain**: each `.replace` returns a new string that the next call works on."
+    },
+    {
+      "from": 30,
+      "to": 33,
+      "note": "L30: `.normalize(\"NFKC\")`, the same Unicode normalisation as `unicodedata.normalize(\"NFKC\", ...)`: ligatures like ﻻ become لا.\nL31: removes invisible marks.\nL32 to L33: removes tashkeel and tatweel, Python's `strip_tashkeel`."
+    },
+    {
+      "from": 34,
+      "to": 37,
+      "note": "L34: alef forms آ أ إ ٱ become bare ا.\nL35: alef maqsura ى becomes ي.\nL36: taa marbuta ة becomes ه, so «إجازة» ends up as `اجازه`, the same as in Python.\nL37: hamza on waw or yaa (ؤ ئ) becomes ء."
+    },
+    {
+      "from": 38,
+      "to": 40,
+      "note": "L38: maps Eastern digits to ASCII by passing a function as the replacement: «٣٠٠» becomes `300`.\nL39: lowercases Latin text.\nL40: end of function."
+    },
+    {
+      "from": 41,
+      "to": 43,
+      "note": "L41: blank.\nL42: `tokenize(text, removeStopwords = true)` has a **default parameter value**, like Python's `remove_stopwords=True`. JavaScript has no keyword-only arguments, so callers pass `false` positionally.\nL43: the output array."
+    },
+    {
+      "from": 44,
+      "to": 44,
+      "note": "Loops over every token of the normalised text. `match` returns `null` when nothing matches, so `|| []` falls back to an empty array (Python's `findall` would already return `[]`). `let tok` because the loop body may replace the token."
+    },
+    {
+      "from": 45,
+      "to": 45,
+      "note": "Skips stopwords with `Set.has`. Python checks two sets; here they were merged into one in `configure`. `continue` jumps to the next token, as in Python."
+    },
+    {
+      "from": 46,
+      "to": 48,
+      "note": "L46: if the token's first character is Arabic (Python's `_ARABIC_CHAR.match(tok)` also tests only the start).\nL47: `Array.find` returns the first prefix that the token starts with and that leaves at least 3 letters, or `undefined`. `(pre) => ...` is an **arrow function**, JavaScript's short lambda.\nL48: if one was found, cuts it off with `slice`. «الفلتر» becomes «فلتر»."
+    },
+    {
+      "from": 49,
+      "to": 51,
+      "note": "Otherwise, the same naive plural fold as Python: a Latin token longer than 3 letters ending in `s` but not `ss` loses the final `s`, so \"days\" becomes \"day\". `slice(0, -1)` is `tok[:-1]`."
+    },
+    {
+      "from": 52,
+      "to": 56,
+      "note": "Appends the token, returns the list. Lines 55 and 56 close the function and add a blank line."
+    },
+    {
+      "from": 57,
+      "to": 62,
+      "note": "L57: `detectLanguage`, the port of `detect_language`.\nL58: counts Arabic-block characters. `/[...]/g` with `match` returns all matches (or `null`, hence `|| []`), and `.length` counts them.\nL59: counts ASCII letters.\nL60: Arabic only if it strictly wins, using the ternary operator `cond ? a : b` (Python's `a if cond else b`).\nL61 to L62: end of function, blank."
+    },
+    {
+      "from": 63,
+      "to": 67,
+      "note": "L63 to L64: `cleanText`, the port of `clean_text`: readable cleanup for stored and displayed text.\nL65: NFKC.\nL66 to L67: removes invisible marks and tatweel, but keeps tashkeel and letter forms, so quotes look exactly like the document."
+    },
+    {
+      "from": 68,
+      "to": 73,
+      "note": "L68: collapses spaces, tabs and no-break spaces (a literal U+00A0 in the class) into one space.\nL69: removes spaces around newlines.\nL70: three or more newlines become two.\nL71: `.trim()` is Python's `.strip()`.\nL72 to L73: end of function, blank."
+    },
+    {
+      "from": 74,
+      "to": 80,
+      "note": "L74: section comment for the ingest rule.\nL75 to L76: the same explanation as in `rag/ingest.py`: a newline before a lowercase letter, digit or bracket, not after sentence punctuation, is a PDF line wrap.\nL77 to L79: `unwrapLines` uses the same regex with a negative **lookbehind** `(?<![.!?:؟])` and a lookahead `(?=[a-z0-9(])`, replacing each wrap newline with a space.\nL80: blank."
+    },
+    {
+      "from": 81,
+      "to": 84,
+      "note": "L81: section comment for chunking.\nL82: `SENT_END` is Python's `_SENT_END`: whitespace after `.`, `!`, `?`, `؟` or `。` (a **lookbehind** `(?<=...)` keeps the punctuation with its sentence), or one or more newlines.\nL83: `EDGE` strips spaces, `>`, `-`, `*` and tabs from both ends of a sentence. JavaScript's `trim()` cannot take a character list like Python's `strip(\" >-*\\t\")`, so a regex anchored at the start (`^`) or end (`$`) does it.\nL84: blank."
+    },
+    {
+      "from": 85,
+      "to": 91,
+      "note": "`splitSentences`, the port of `split_sentences`. `split(SENT_END)` cuts the text into pieces; `.map(...)` transforms each piece (remove a leading `#` heading marker, trim, strip the edge characters); `.filter(Boolean)` drops empty strings, because `Boolean(\"\")` is false. This is the chained form of Python's generator expression plus list comprehension. Line 91 is blank."
+    },
+    {
+      "from": 92,
+      "to": 95,
+      "note": "`simpleTokenCount`, the port of `simple_token_count`: a run of word characters or a single other non-space character counts as one token. Python's `\\w` is Unicode-aware by default; JavaScript's `\\w` is ASCII only, so the port spells it out as `[\\p{L}\\p{N}_]` (any letter, any number, underscore), which needs the `u` flag. Uploads in the browser are actually counted with the e5 tokenizer (`Engine.countTokens`); this is the fallback default. Line 95 is blank."
+    },
+    {
+      "from": 96,
+      "to": 98,
+      "note": "`splitLong`, the port of `_split_long`, for one sentence longer than the token budget. `out` collects pieces, `cur` holds the words of the current piece (`let` because it is reassigned)."
+    },
+    {
+      "from": 99,
+      "to": 105,
+      "note": "L99: splits on whitespace and drops empty strings (Python's `split()` with no argument does both at once). `for (const w of ...)` iterates values, like Python's `for w in ...`.\nL100: if the current piece is non-empty and adding this word would exceed the budget, the piece is finished. `[...cur, w]` builds a new array without changing `cur`.\nL101 to L102: saves the piece and starts a new one.\nL104: adds the word. A single word longer than the budget still becomes its own piece.\nL103, L105: closing braces."
+    },
+    {
+      "from": 106,
+      "to": 109,
+      "note": "Saves the last piece, returns the list, closes the function. Line 109 is blank."
+    },
+    {
+      "from": 110,
+      "to": 113,
+      "note": "L110 to L111: the comment restates the chunking rule from `rag/chunking.py`: pack sentences up to `maxTokens`, start the next chunk with the last sentences of the previous one up to `overlapTokens`, so a fact on a boundary is never lost.\nL112: `chunkPages(pages, { maxTokens = 160, overlapTokens = 40, count = simpleTokenCount } = {})` is JavaScript's version of keyword arguments: an options object, destructured with defaults, and `= {}` so it can be omitted entirely.\nL113: the output array."
+    },
+    {
+      "from": 114,
+      "to": 119,
+      "note": "L114: page by page, so a chunk never spans pages.\nL115: `sents` holds `[sentence, tokenCount]` pairs (two-element arrays play the role of Python tuples).\nL116 to L117: a sentence within budget stays whole, a longer one is split on words.\nL118: stores each piece with its count, computed once.\nL119: closes the loop."
+    },
+    {
+      "from": 120,
+      "to": 122,
+      "note": "`n` numbers chunks on the page, `i` is the first sentence of the next chunk; loop until all sentences are placed."
+    },
+    {
+      "from": 123,
+      "to": 130,
+      "note": "L123 to L125: a new chunk: its sentences, its token size, a cursor `j`.\nL126: adds sentences while they fit; `!cur.length` always admits the first one, so the loop progresses.\nL127 to L129: adds the sentence and its count, moves on.\nL130: closes the inner loop."
+    },
+    {
+      "from": 131,
+      "to": 134,
+      "note": "L131: joins the sentences with newlines.\nL132: pushes a plain object with the same fields as Python's `Chunk`. The id uses a **template literal** (backticks, `${...}` placeholders, like an f-string): `travel-policy.en.pdf#p2-c0`. `{ ..., text, ... }` is **shorthand** for `text: text`.\nL133: next chunk number.\nL134: last sentence used: the page is done."
+    },
+    {
+      "from": 135,
+      "to": 141,
+      "note": "The overlap step, line for line the same as Python: walk back over trailing sentences while they fit in `overlapTokens`, but never back to the chunk's first sentence (`k - 1 > i`), so the next chunk always starts later. `i = k` starts the next chunk on the overlap."
+    },
+    {
+      "from": 142,
+      "to": 146,
+      "note": "Closes the loops, returns all chunks and closes the function. Line 146 is blank."
+    },
+    {
+      "from": 147,
+      "to": 152,
+      "note": "L147 to L148: the comment points at the source: `is_answer_candidate` in `rag/generate.py`.\nL149 to L150: trims the sentence.\nL151: at least 4 tokens counting stopwords (`tokenize(s, false)`), and not ending in `?` or `؟`. `/[?؟]$/.test(s)` checks the last character with a regex anchored at the end.\nL152: end of function."
+    }
+  ]
+}

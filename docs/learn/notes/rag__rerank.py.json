@@ -1,0 +1,116 @@
+{
+  "file": "rag/rerank.py",
+  "title": "Re-ranking",
+  "stage": "rerank",
+  "summary": "Re-ranking is a second, more careful pass over the top candidates from hybrid search. A cross-encoder reads the question and each passage **together** and outputs one relevance score per pair, which is much more accurate than comparing two independent vectors. When a translation exists, each passage is scored against both wordings and keeps the better score. A question and a list of hits go in, the same hits re-sorted by cross-encoder score come out; the top score is also what the pipeline uses for its confidence bands.",
+  "key_ideas": [
+    {
+      "term": "Bi-encoder vs cross-encoder",
+      "explain": "A bi-encoder (the embedder) encodes question and passage separately, so passages can be pre-computed, but the two texts never see each other. A cross-encoder feeds both texts through the transformer at once, so attention can link question words to passage words. It is far more accurate and far slower, so it only re-orders a short list (10 here)."
+    },
+    {
+      "term": "Retrieve then re-rank",
+      "explain": "The standard two-stage design: a cheap retriever finds a candidate pool with high recall, and an expensive model fixes the order. In this repo it lifts recall@1 on the 30 questions from 0.67 to 0.90 and above."
+    },
+    {
+      "term": "Logit, not probability",
+      "explain": "This model outputs a raw logit: an unbounded real number where higher means more relevant. It is not a probability (it can be -4.9 or +3) and only the order and rough level mean something, which is why the confidence bands use model-specific cut-offs like -4 and -2."
+    },
+    {
+      "term": "Best of both wordings",
+      "explain": "A chunk often mixes several topics in one language. Scoring it against a same-language wording of the question gives the clearest signal, so each chunk keeps the max over the original and the translated question."
+    }
+  ],
+  "blocks": [
+    {
+      "from": 1,
+      "to": 9,
+      "note": "Module docstring. It names the default model, `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1`: a multilingual MiniLM trained on mMARCO (MS MARCO passage ranking machine-translated into 14 languages, Arabic included). It also explains `alt_queries`: the maternity sentence sits between sick leave and bereavement leave in the English handbook, so against the Arabic question that chunk looks half relevant (-3.7 in the README), but against the English wording it is clearly first (-2.7)."
+    },
+    {
+      "from": 10,
+      "to": 12,
+      "note": "`from __future__ import annotations` makes every type hint a lazy string. You can then write `list[str]` or `str | None` on older Pythons (3.8, 3.9) and name a class inside its own body."
+    },
+    {
+      "from": 13,
+      "to": 14,
+      "note": "`os` to read the model id from the environment."
+    },
+    {
+      "from": 15,
+      "to": 16,
+      "note": "`Hit` is both the input and the output type."
+    },
+    {
+      "from": 17,
+      "to": 19,
+      "note": "The default re-ranker model id, overridable with `RAG_RERANK_MODEL`. Changing it requires re-calibrating `MIN_SCORE` and `SURE_SCORE` in `rag/pipeline.py`, because each model's logits live on their own scale. Lines 18 and 19 are blank."
+    },
+    {
+      "from": 20,
+      "to": 20,
+      "note": "`CrossEncoderReranker` wraps the model."
+    },
+    {
+      "from": 21,
+      "to": 21,
+      "note": "The constructor takes the model id and the device (CPU by default)."
+    },
+    {
+      "from": 22,
+      "to": 23,
+      "note": "Lazy import of `CrossEncoder` from sentence-transformers, so PyTorch loads only when re-ranking is turned on."
+    },
+    {
+      "from": 24,
+      "to": 26,
+      "note": "L24: keeps the model name for reporting.\nL25: loads the model. `max_length=512` is the maximum number of tokens for the **pair** (question plus passage); longer pairs are truncated. 160-token chunks plus a short question fit easily. For this model, sentence-transformers applies no activation in `predict` (its config sets `Identity`), so scores come out as raw logits.\nL26: blank."
+    },
+    {
+      "from": 27,
+      "to": 27,
+      "note": "`rerank` signature. `k` optionally truncates the output; `alt_queries` is a tuple of other wordings (the translation). A tuple default `()` is safe as a default argument because tuples are immutable, unlike a list default."
+    },
+    {
+      "from": 28,
+      "to": 29,
+      "note": "Nothing to re-rank returns the empty list as is."
+    },
+    {
+      "from": 30,
+      "to": 30,
+      "note": "All wordings to score: the original question first, then every non-empty alternative. `[query, *[...]]` uses **unpacking** inside a list literal to splice the filtered alternatives in."
+    },
+    {
+      "from": 31,
+      "to": 31,
+      "note": "Builds every (question, passage) pair with a nested list comprehension: the outer loop is over wordings, the inner over hits. With 2 wordings and 10 hits that is 20 pairs, ordered all hits for wording 0, then all hits for wording 1."
+    },
+    {
+      "from": 32,
+      "to": 32,
+      "note": "`predict` scores all pairs in batches and returns one number per pair, a logit. One call for all pairs is faster than one call per pair."
+    },
+    {
+      "from": 33,
+      "to": 34,
+      "note": "L33: `n` is the number of hits.\nL34: for hit `i`, its score for wording `j` sits at position `j * n + i` in the flat array (because of the pair order on L31). The `max` over wordings keeps the better score, so a passage that matches the English translation well is not held back by a weaker match to the Arabic question. A generator expression inside `max` avoids building a temporary list."
+    },
+    {
+      "from": 35,
+      "to": 35,
+      "note": "Pairs each hit with its score and sorts by score, highest first. `key=lambda x: x[1]` sorts by the second item of each pair."
+    },
+    {
+      "from": 36,
+      "to": 36,
+      "note": "Rebuilds the hits with the re-ranker score as `score`. The cosine in `dense` is carried over unchanged."
+    },
+    {
+      "from": 37,
+      "to": 37,
+      "note": "Returns the top `k` if `k` is given, else all hits. Note that `k=0` would also mean \"all\", since 0 is falsy."
+    }
+  ]
+}

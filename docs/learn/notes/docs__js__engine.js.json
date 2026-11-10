@@ -1,0 +1,545 @@
+{
+  "file": "docs/js/engine.js",
+  "title": "Browser engine",
+  "stage": "orchestrate",
+  "summary": "This is the whole RAG pipeline running in the browser, the counterpart of `rag/pipeline.py` with retrieval, re-ranking and extractive answering ported in. It loads the precomputed `index.json`, embeds questions (and uploaded files) with transformers.js using the same e5-small model, runs dense search and BM25, fuses them with RRF, optionally translates and re-ranks with the same MarianMT and cross-encoder models, sorts the result into the same three confidence bands, and answers by quoting sentences or by calling an LLM. It works in two modes: **fast** (embedder only) right away, and **full** (plus translation and re-ranking) once the larger models have downloaded.",
+  "key_ideas": [
+    {
+      "term": "transformers.js",
+      "explain": "A JavaScript port of Hugging Face Transformers that runs ONNX models in the browser (WebAssembly). `pipeline(\"feature-extraction\", model)` with `pooling: \"mean\"` and `normalize: true` does exactly what sentence-transformers does for e5: average the token vectors, then scale to length 1. So browser query vectors can be compared with the passage vectors made in Python."
+    },
+    {
+      "term": "Typed arrays",
+      "explain": "A `Float32Array` is a fixed-size array of 32-bit floats over a raw byte buffer, the browser's equivalent of a NumPy float32 array. `subarray(a, b)` returns a **view** on the same memory (no copy), which is how one big decoded buffer becomes one vector per chunk."
+    },
+    {
+      "term": "BM25 as a closure",
+      "explain": "`buildBM25` computes the statistics once and returns a function that scores a query. The returned function keeps access to `idf`, `tfs` and `avgdl` after `buildBM25` has finished: that captured environment is a **closure**, the JavaScript way to bundle data with behaviour without a class."
+    },
+    {
+      "term": "Confidence percentage",
+      "explain": "The raw score (a cross-encoder logit or a cosine) is mapped onto a 1 to 99 scale with fixed anchor points: the floor becomes 40 % and the \"sure\" line 75 %. It is a friendlier display of how strongly the best passage matches. It is not an accuracy or a probability: 4 of 24 unanswerable questions still score in the sure band."
+    },
+    {
+      "term": "Progressive modes",
+      "explain": "The page is usable after downloading only the small embedder (fast mode). Translation and re-ranking (about 340 MB) load in the background; when they arrive, `this.extras` is set and every question uses full mode."
+    }
+  ],
+  "blocks": [
+    {
+      "from": 1,
+      "to": 8,
+      "note": "Header comment: the steps of `rag/pipeline.py`, drawn as a flow (question, optional translation, embedding, dense plus BM25, RRF, optional re-rank, confidence band, answer). It explains how the sample index and uploads share one space: the samples were chunked and embedded in Python (`scripts/export_web_index.py`), and uploads are chunked and embedded here with the same rules and model."
+    },
+    {
+      "from": 9,
+      "to": 9,
+      "note": "Imports four names from transformers.js, loaded as an ES module from the jsDelivr CDN at an exact version (4.3.1): `pipeline` (high-level tasks like feature extraction and translation), `env` (global settings), and `AutoTokenizer` plus `AutoModelForSequenceClassification` (low-level classes, needed for the cross-encoder, which takes text pairs)."
+    },
+    {
+      "from": 10,
+      "to": 13,
+      "note": "L10: `import * as T` imports everything `text.js` exports under the namespace `T` (like `import text as T` in Python), so calls read `T.tokenize(...)`.\nL11: the LLM module under `LLM`.\nL12: just `readFile` from `ingest.js`.\nL13: blank."
+    },
+    {
+      "from": 14,
+      "to": 15,
+      "note": "`env.allowLocalModels = false` tells transformers.js not to look for model files on this website's own server, and to fetch them from the Hugging Face Hub instead (the browser then caches them). Line 15 is blank."
+    },
+    {
+      "from": 16,
+      "to": 21,
+      "note": "L16: `RRF_K = 60`, the same RRF constant as `rag/retrieval.py`.\nL17: `POOL = 30`, how deep each ranking goes before fusion, the same as `hybrid_search`'s `pool`.\nL18: `TOP_K = 5`, passages shown and given to the generator, the same as `k=5` in Python.\nL19: `RERANK_POOL = 10`, the same as `rag/pipeline.py`.\nL20 to L21: the extractive answer looks at the top 3 passages and quotes at most 2 sentences, as in `ExtractiveGenerator`."
+    },
+    {
+      "from": 22,
+      "to": 26,
+      "note": "The \"not sure\" prefix in both languages, the same text as `rag/render.py`. Line 26 is blank."
+    },
+    {
+      "from": 27,
+      "to": 27,
+      "note": "Section comment: small vector helpers."
+    },
+    {
+      "from": 28,
+      "to": 33,
+      "note": "L28: `f32` decodes a base64 string written by `b64()` in `scripts/export_web_index.py` back into floats.\nL29: `atob` decodes base64 into a \"binary string\", one character per byte (codes 0 to 255).\nL30 to L31: copies those codes into a `Uint8Array`, a typed array of raw bytes.\nL32: views the same bytes as 32-bit floats. `new Float32Array(buffer)` reinterprets every 4 bytes as one float in the machine's byte order, which is little-endian on practically every device; that is why Python wrote `<f4` (little-endian float32) explicitly."
+    },
+    {
+      "from": 34,
+      "to": 39,
+      "note": "`dot` is the dot product of two vectors with a plain loop. The comment states the key fact: vectors are unit length, so the dot product **is** the cosine similarity, the same reason `rag/retrieval.py` uses `IndexFlatIP`. With a few hundred passages, a loop is fast enough; no vector index is needed."
+    },
+    {
+      "from": 40,
+      "to": 41,
+      "note": "`ranked` returns positions sorted by descending score, the browser version of `np.argsort(-x)`. `scores.keys()` on an array yields its indices; `[...]` spreads them into an array; `sort((a, b) => scores[b] - scores[a])` sorts by score, highest first. It is an arrow function stored in a `const`. Line 41 is blank."
+    },
+    {
+      "from": 42,
+      "to": 42,
+      "note": "Section comment: BM25 Okapi with the same formula and defaults as the `rank_bm25` library the Python side uses: `k1 = 1.5`, `b = 0.75`, `epsilon = 0.25`. Matching the library exactly keeps browser BM25 scores identical to Python's."
+    },
+    {
+      "from": 43,
+      "to": 44,
+      "note": "`buildBM25(docs)` takes one token list per chunk. `N` is the number of chunks."
+    },
+    {
+      "from": 45,
+      "to": 51,
+      "note": "L45: `df` (document frequency) maps a term to the number of chunks containing it. A `Map` is JavaScript's dict; unlike a plain object it accepts any key safely (a term like `constructor` would clash with object internals).\nL46: for every chunk, builds `tf` (term frequency), a `Map` from term to count in that chunk. `tfs` collects them.\nL48: counts each token; `(tf.get(t) || 0) + 1` is the `dict.get(t, 0) + 1` idiom.\nL49: each distinct term of the chunk adds 1 to its document frequency.\nL50 to L51: returns the chunk's `tf`, closes the `map`."
+    },
+    {
+      "from": 52,
+      "to": 52,
+      "note": "`avgdl`, the average chunk length in tokens. `reduce` folds the array into a sum (like Python's `sum(len(d) for d in docs)`); `Math.max(N, 1)` avoids dividing by zero."
+    },
+    {
+      "from": 53,
+      "to": 55,
+      "note": "Prepares the IDF table, the list of terms with negative IDF and the running IDF sum."
+    },
+    {
+      "from": 56,
+      "to": 61,
+      "note": "L56: iterates the `Map` as `[term, count]` pairs with destructuring.\nL57: IDF = `log(N - n + 0.5) - log(n + 0.5)`, exactly `rank_bm25`'s formula. It is negative when a term is in more than half the chunks.\nL58 to L59: stores it and adds it to the sum.\nL60: remembers negative terms for the floor.\nL61: end of loop."
+    },
+    {
+      "from": 62,
+      "to": 63,
+      "note": "The **epsilon floor**: every negative IDF is replaced by `0.25 x average IDF`. A word in most chunks (\"leave\" in a leave policy) then adds a little score instead of subtracting it, as in `BM25Okapi._calc_idf`."
+    },
+    {
+      "from": 64,
+      "to": 71,
+      "note": "L64: returns an **arrow function** `(query) => ...`. This is the closure: it keeps `docs`, `tfs`, `idf` and `avgdl` alive and uses them on every call.\nL65: one score per chunk.\nL66: sums over query terms with `reduce`, starting from 0 (L69).\nL67: the term's count in this chunk.\nL68: the BM25 term score `idf * f * (k1 + 1) / (f + k1 * (1 - b + b * len / avgdl))` with the numbers written in: `2.5` is `k1 + 1`, `1.5` is `k1`, `0.75` is `b`. Repeated terms saturate (k1) and long chunks are penalised (b).\nL69 to L71: closes the reducer, the map and the function."
+    },
+    {
+      "from": 72,
+      "to": 77,
+      "note": "L72: blank.\nL73: section comment.\nL74 to L77: the comment explains the mapping and its limit: the raw signal is a logit (full mode) or a cosine (fast mode), neither is a probability. The bands are put on one scale, below the floor under 40 %, between floor and sure 40 to 75 %, above sure 75 % and up, and it measures how strongly the best passage matches, not whether the answer is right."
+    },
+    {
+      "from": 78,
+      "to": 79,
+      "note": "L78: `confidencePercent(score, floor, sure, kind)`.\nL79: `span` is how far beyond the floor or the sure line the scale stretches: 6 logits for the re-ranker, 0.08 for cosine. The two signals live on very different scales (e5 cosines sit around 0.75 to 0.90), so each needs its own."
+    },
+    {
+      "from": 80,
+      "to": 84,
+      "note": "L80: `let p` declares the result.\nL81: below the floor: 40 % at the floor, falling linearly to 0 at `floor - span` (then clamped to 1).\nL82: between floor and sure: linear from 40 % to 75 %. Example: a re-ranker score of -2.7 with floor -4 and sure -2 gives 40 + 35 x 1.3 / 2 = 62.75, shown as 63 %.\nL83: above sure: from 75 % upward, reaching 99 % at `sure + span`.\nL84: clamps to 1 to 99 and rounds. Never 0 or 100, because the score cannot justify certainty either way."
+    },
+    {
+      "from": 85,
+      "to": 86,
+      "note": "Closes the function. Line 86 is blank."
+    },
+    {
+      "from": 87,
+      "to": 88,
+      "note": "`export class Engine` declares a class, as in Python. `constructor()` is JavaScript's `__init__`; `this` is `self`."
+    },
+    {
+      "from": 89,
+      "to": 98,
+      "note": "L89: `config` will hold the parsed `index.json`.\nL90: `docs`, a `Map` from document name to a record (source sample or upload, language, pages, chunk count, enabled flag), for the Documents panel.\nL91: `chunks`, every chunk with its text, BM25 tokens and vector.\nL92: `byId`, chunk id to chunk, for quick lookups.\nL93: `sentences`, chunk id to its quotable sentences with their vectors, used by the extractive answer.\nL94: `active`, the chunks of enabled documents. Search runs only over these.\nL95: `bm25`, the scoring closure from `buildBM25`.\nL96: `embedder`, the transformers.js feature-extraction pipeline once loaded.\nL97: `extras`, the re-ranker and translators once full mode has loaded; `null` means fast mode.\nL98: end of constructor."
+    },
+    {
+      "from": 99,
+      "to": 103,
+      "note": "A **getter**: `get mode()` makes `engine.mode` a computed property, like Python's `@property`. It is `\"full\"` once extras are loaded, else `\"fast\"`. Lines 99 and 103 are blank."
+    },
+    {
+      "from": 104,
+      "to": 104,
+      "note": "Section comment: loading."
+    },
+    {
+      "from": 105,
+      "to": 108,
+      "note": "L105: `loadIndex` loads the precomputed index; `url = \"index.json\"` is a default parameter.\nL106: `await (await fetch(url)).json()`: the inner `await` waits for the HTTP response, the outer one for the parsed JSON. The URL is relative, so it is a same-origin request and CORS does not apply.\nL107: keeps the config (model ids, thresholds, vectors).\nL108: hands the stopword lists and prefixes to `text.js`, so query tokenisation matches Python's."
+    },
+    {
+      "from": 109,
+      "to": 111,
+      "note": "L109: `d`, the vector size (384).\nL110: decodes all chunk vectors into one flat `Float32Array` of length chunks x 384.\nL111: decodes all sentence vectors the same way."
+    },
+    {
+      "from": 112,
+      "to": 113,
+      "note": "L112: for each chunk, `{ ...c, vec: ... }` copies its fields (object **spread**) and adds `vec`, a `subarray` view of its 384 floats: rows `i * d` to `(i + 1) * d`, no copying.\nL113: the same for sentences, also recording the id of the chunk each sentence belongs to."
+    },
+    {
+      "from": 114,
+      "to": 116,
+      "note": "Adds them to the index as the \"sample\" documents. Line 116 is blank."
+    },
+    {
+      "from": 117,
+      "to": 120,
+      "note": "`loadEmbedder` creates the transformers.js `feature-extraction` pipeline for `Xenova/multilingual-e5-small` (the model id from `index.json`). `dtype: \"q8\"` picks the 8-bit quantized ONNX weights, about 4 times smaller than float32 and faster on CPU; the vectors differ from Python's only in tiny rounding, so they stay in the same space. `progress_callback` reports download progress to the page. Line 120 is blank."
+    },
+    {
+      "from": 121,
+      "to": 128,
+      "note": "L121: `loadExtras` loads full mode: the re-ranker and the translators.\nL122: the re-ranker settings from `index.json`.\nL123: the cross-encoder's tokenizer.\nL124 to L128: the cross-encoder model, the same `mmarco-mMiniLMv2` as `rag/rerank.py`. `model_file_name: r.file` selects the 8-bit file `model_quint8_avx2` that the model's repository ships. `dtype: \"fp32\"` tells transformers.js not to append a quantization suffix to that file name, so it loads exactly that file."
+    },
+    {
+      "from": 129,
+      "to": 135,
+      "note": "L129: an object for the translators.\nL130: `Object.entries` gives `[key, value]` pairs, like `dict.items()`: `ar` maps to `Xenova/opus-mt-ar-en`, `en` to `Xenova/opus-mt-en-ar`.\nL131: creates a `translation` pipeline per direction, 8-bit quantized. They load one after another because of `await` in the loop.\nL133: only now sets `extras`, so `mode` flips to full in one step, after everything has loaded.\nL132, L134, L135: closing braces and a blank line."
+    },
+    {
+      "from": 136,
+      "to": 136,
+      "note": "Section comment: the index."
+    },
+    {
+      "from": 137,
+      "to": 141,
+      "note": "L137: `_add` adds chunks and sentences from one source. The leading underscore is a convention for internal methods, as in Python.\nL139: computes BM25 tokens if the chunk does not have them (sample chunks already carry Python's tokens).\nL140 to L141: stores the chunk and indexes it by id."
+    },
+    {
+      "from": 142,
+      "to": 148,
+      "note": "L142: gets the document's record or creates one.\nL143: `pages` is a `Set`, so each page is counted once.\nL144: counts the chunk.\nL145: counts chunks per language.\nL146: the document's language is the one with the most chunks: sort the `[lang, count]` pairs by count descending and take the first key.\nL147: stores the record.\nL148: end of loop."
+    },
+    {
+      "from": 149,
+      "to": 155,
+      "note": "L149 to L152: groups sentences by chunk id, creating the list on first use (like `dict.setdefault(k, []).append(s)`).\nL153: rebuilds the active set and BM25.\nL154 to L155: closes the method, blank."
+    },
+    {
+      "from": 156,
+      "to": 161,
+      "note": "L156: comment: BM25 statistics cover enabled documents only.\nL157: `reindex` recomputes the search set.\nL158: keeps chunks whose document is enabled. `this.docs.get(c.doc)?.enabled` uses optional chaining: if the record is missing the result is `undefined`, which is falsy.\nL159: rebuilds BM25 over those chunks. Like `HybridIndex.add` in Python, it rebuilds from scratch, because IDF and average length depend on the whole collection: switching a document off changes every term's weight.\nL160 to L161: closes the method, blank."
+    },
+    {
+      "from": 162,
+      "to": 169,
+      "note": "`setEnabled` switches a document on or off and reindexes. Disabled documents keep their vectors in memory, so switching back on is instant. Line 169 is blank."
+    },
+    {
+      "from": 170,
+      "to": 180,
+      "note": "L170 to L176: `removeDocument` keeps every chunk of other documents; for this document's chunks, the filter callback also removes them from `byId` and `sentences` before returning `false` to drop them.\nL177: deletes the document record.\nL178: reindexes.\nL179 to L180: closes the method, blank."
+    },
+    {
+      "from": 181,
+      "to": 184,
+      "note": "`chunksOf` returns one document's chunks, for the Documents panel. Line 184 is blank."
+    },
+    {
+      "from": 185,
+      "to": 186,
+      "note": "Section comment, plus the reason for the prefixes: E5 was trained with `query: ` and `passage: ` in front of the text, and leaving them out costs accuracy, the same rule as `SentenceTransformerEmbedder._encode`."
+    },
+    {
+      "from": 187,
+      "to": 189,
+      "note": "L187: `embed(texts, prefix, onBatch)` embeds a list of texts with a prefix and an optional progress callback.\nL188: the vector size.\nL189: the output list of vectors."
+    },
+    {
+      "from": 190,
+      "to": 191,
+      "note": "Processes 16 texts at a time, prefixing each. Batches bound memory use and let the page report progress between them."
+    },
+    {
+      "from": 192,
+      "to": 192,
+      "note": "Runs the model. `pooling: \"mean\"` averages the token vectors into one vector per text (respecting the attention mask, so padding does not count), and `normalize: true` scales it to length 1. That is exactly what sentence-transformers does for e5 (`normalize_embeddings=True`), so these vectors are comparable with the Python ones in `index.json`."
+    },
+    {
+      "from": 193,
+      "to": 194,
+      "note": "L193: the result is a tensor whose `data` is one flat `Float32Array` of batch x 384 values. `slice` (unlike `subarray`) **copies** each row, so a vector stays valid on its own and can be stored in IndexedDB.\nL194: reports how many texts are done."
+    },
+    {
+      "from": 195,
+      "to": 198,
+      "note": "Closes the loop, returns the vectors, closes the method. Line 198 is blank."
+    },
+    {
+      "from": 199,
+      "to": 202,
+      "note": "`countTokens` counts tokens with the embedder's own tokenizer, without special tokens: the same as Python's `count_tokens`. Uploaded files are chunked with it, so a 160-token chunk is 160 model tokens in both versions. Line 202 is blank."
+    },
+    {
+      "from": 203,
+      "to": 206,
+      "note": "L203: section comment: the steps for adding your own file.\nL204: `addFile(file, step)`; `step(name, info)` lets the page draw each stage live.\nL205: `performance.now()` is a high-resolution timer in milliseconds, for timing.\nL206: marks the read step as running."
+    },
+    {
+      "from": 207,
+      "to": 208,
+      "note": "L207: reads the file into pages with `readFile` from `ingest.js`, reporting \"page n of total\".\nL208: no text at all (for example a scanned PDF) is an error with a hint about OCR."
+    },
+    {
+      "from": 209,
+      "to": 211,
+      "note": "Counts characters with `reduce` and reports the read step as done. `toLocaleString()` formats numbers with the user's thousands separator. Line 211 is blank."
+    },
+    {
+      "from": 212,
+      "to": 213,
+      "note": "Chunks the pages with `chunkPages` from `text.js`, passing `count: (t) => this.countTokens(t)`. An arrow function keeps the surrounding `this`, so it still refers to the engine when `chunkPages` calls it."
+    },
+    {
+      "from": 214,
+      "to": 219,
+      "note": "Collects quotable sentences per chunk, using `splitSentences` and `isAnswerCandidate`, exactly what `scripts/export_web_index.py` did for the samples. Then reports the chunk step with counts. Line 219 is blank."
+    },
+    {
+      "from": 220,
+      "to": 224,
+      "note": "L220 to L221: computes BM25 tokens for each chunk.\nL222: the vocabulary size: `flatMap` concatenates all token lists, and a `Set` keeps distinct terms.\nL223: reports it with a sample of the first chunk's tokens. `chunks[0]?.tokens` is safe even if there were no chunks.\nL224: blank."
+    },
+    {
+      "from": 225,
+      "to": 227,
+      "note": "L225: the embed step starts.\nL226: the total number of texts to embed: chunks plus sentences.\nL227: embeds the chunks as **passages** (`passage: ` prefix), reporting progress."
+    },
+    {
+      "from": 228,
+      "to": 230,
+      "note": "Embeds the sentences as passages too, as `ExtractiveGenerator` does, with progress counted after the chunks. Precomputing them here means answering a question needs no sentence embedding at all."
+    },
+    {
+      "from": 231,
+      "to": 234,
+      "note": "Attaches each vector to its chunk or sentence by position, and reports the embed step with the first vector so the page can draw it. Line 234 is blank."
+    },
+    {
+      "from": 235,
+      "to": 240,
+      "note": "L235: the index step.\nL236: if a document with the same name exists, it is removed first, so re-uploading replaces it instead of duplicating it.\nL237: adds the new chunks and sentences as an \"upload\".\nL238: reports that the document is searchable now.\nL239: returns a summary (pages, chunks, sentences, time, size) the page stores and shows.\nL240: end of method."
+    },
+    {
+      "from": 241,
+      "to": 248,
+      "note": "L241: blank.\nL242: comment: uploads are kept in IndexedDB (the browser's database, handled in `store.js`), so they survive a reload without re-embedding.\nL243 to L247: `restore` rebuilds chunks and sentences from a stored record, attaching the saved vectors, and adds them to the index.\nL248: blank."
+    },
+    {
+      "from": 249,
+      "to": 249,
+      "note": "Section comment: retrieval."
+    },
+    {
+      "from": 250,
+      "to": 256,
+      "note": "L250: `translate`, the browser side of `MarianTranslator`.\nL251: no translation in fast mode.\nL252: picks the translator by the question's language, cuts the input to 300 characters, and generates with `max_new_tokens: 64` and `no_repeat_ngram_size: 3`, the anti-loop setting from `rag/translate.py`. Unlike Python it does not request beam search (`num_beams` is left at its default), which keeps it faster in the browser.\nL253: the pipeline returns a list of `{ translation_text }`; optional chaining guards an empty result.\nL254: keeps the translation only if it is plausible and differs from the question, the same two checks as `plausible()` and `RAGPipeline.alt_queries` in Python.\nL255 to L256: closes the method, blank."
+    },
+    {
+      "from": 257,
+      "to": 258,
+      "note": "`hybrid(query, qv, k)`: the comment points to the source, `hybrid_search` in `rag/retrieval.py`. It takes the query text, its vector and how many hits to return."
+    },
+    {
+      "from": 259,
+      "to": 259,
+      "note": "The cosine of the query with every active chunk, by dot product (unit vectors). This is the brute-force equivalent of `self.vectors @ qvec[0]`."
+    },
+    {
+      "from": 260,
+      "to": 261,
+      "note": "Tokenises the query with the shared rules and scores every chunk with the BM25 closure. A query with no tokens (only stopwords) gets all-zero BM25 scores, as in Python."
+    },
+    {
+      "from": 262,
+      "to": 263,
+      "note": "L262: the dense ranking: positions by descending cosine, top `POOL` (30).\nL263: the BM25 ranking, top 30, keeping only positive scores, so a chunk with no matching term gets no free RRF points."
+    },
+    {
+      "from": 264,
+      "to": 265,
+      "note": "Reciprocal rank fusion. For each list, `forEach((i, r) => ...)` gives the chunk position `i` and the 0-based rank `r`, so the contribution is `1 / (60 + r + 1)`: rank 1 adds 1/61, as in Python's `rrf`. Using ranks only means a cosine of 0.83 and a BM25 score of 7.2 never have to be put on one scale."
+    },
+    {
+      "from": 266,
+      "to": 269,
+      "note": "L266 to L268: sorts the fused positions by score, highest first, and keeps `k`.\nL269: builds each hit with the chunk, the RRF `score`, the cosine `cos` (kept for fast-mode confidence, like `Hit.dense`), and extra trace data: the chunk's rank in each list (`indexOf` returns -1 when absent, so `+ 1` gives 0 for \"not in this list\") and its BM25 score."
+    },
+    {
+      "from": 270,
+      "to": 277,
+      "note": "Returns the query tokens, the fused hits, and the top 5 of each separate ranking so the page can show dense, BM25 and fused results side by side. Line 277 is blank."
+    },
+    {
+      "from": 278,
+      "to": 279,
+      "note": "`fuseHits(lists, k)`, the port of `fuse_hits`: RRF across the question's and the translation's hit lists, keyed by chunk id, keeping the best cosine."
+    },
+    {
+      "from": 280,
+      "to": 288,
+      "note": "L280 to L281: a `Map` for fused scores and one for the hit with the best cosine.\nL282 to L285: for every hit in every list, adds `1 / (60 + rank)` by chunk id.\nL286: keeps the hit with the higher cosine, so a passage that the English translation matched better keeps that better value.\nL287 to L288: closes the loops."
+    },
+    {
+      "from": 289,
+      "to": 294,
+      "note": "Sorts ids by fused score and keeps `k`. `{ ...best.get(id), score: score.get(id) }` copies the best hit and overrides its `score` with the fused one: in an object literal, a later key wins over the spread. Line 294 is blank."
+    },
+    {
+      "from": 295,
+      "to": 297,
+      "note": "`rerank(queries, hits)`. The comment summarises `rag/rerank.py`: a cross-encoder reads question and passage **together**, and each passage keeps its best score over the wordings."
+    },
+    {
+      "from": 298,
+      "to": 301,
+      "note": "L298: takes the tokenizer and model from `extras` by destructuring.\nL299: the passage texts.\nL300: the question side of every pair: each wording repeated once per passage. `flatMap` maps and flattens in one step.\nL301: the passage side: the passage list repeated once per wording. Together, pair `j * n + i` is (wording j, passage i), the same order as Python's nested comprehension."
+    },
+    {
+      "from": 302,
+      "to": 306,
+      "note": "L302: collects the raw scores.\nL303: processes 10 pairs per batch. With `RERANK_POOL = 10`, one batch is one wording against all candidates. A batch is padded to its longest pair, so small batches keep memory and padding waste low on a single browser thread.\nL304: tokenises the batch as text pairs (`text_pair`), padded, truncated to 512 tokens, like `CrossEncoder(max_length=512)`.\nL305: runs the model. `logits.data` is a `Float32Array` with one raw logit per pair; `push(...)` spreads them into the list. No sigmoid is applied, so these are the same unbounded logits as in Python, and the same -4 / -2 thresholds apply.\nL306: end of loop."
+    },
+    {
+      "from": 307,
+      "to": 311,
+      "note": "For every hit, copies it, records its rank before re-ranking (`before`, for the trace) and sets `rr` to its best logit over the wordings (`Math.max(...)` of the scores at `j * hits.length + i`). Then sorts by `rr`, highest first. Line 311 is blank."
+    },
+    {
+      "from": 312,
+      "to": 314,
+      "note": "`extract(hits, runs)`: the comment summarises `ExtractiveGenerator`: score every sentence of the top passages as 0.75 x cosine + 0.25 x share of the question's words, then quote the best one or two."
+    },
+    {
+      "from": 315,
+      "to": 317,
+      "note": "L315: the token set of each query run (question, and translation if any).\nL316: the candidate list.\nL317: sentences already seen. Overlapping chunks repeat sentences; the first copy, from the higher-ranked chunk, wins."
+    },
+    {
+      "from": 318,
+      "to": 321,
+      "note": "L318: the top 3 hits; `k` is the 0-based position, so the source number is `k + 1`.\nL319: the chunk's precomputed quotable sentences (`|| []` if none).\nL320 to L321: skips duplicates, records new ones."
+    },
+    {
+      "from": 322,
+      "to": 325,
+      "note": "L322: the sentence's token set.\nL323: the lexical score: for each query, the share of its terms found in the sentence, and the best over queries. `[...qs].filter((t) => st.has(t)).length` counts the intersection.\nL324: the dense score: the best dot product of the sentence vector with any query vector. Sentence vectors were precomputed, so this needs no model call.\nL325: stores the candidate with its source number, both parts and the combined score `0.75 * dense + 0.25 * lex`, the same weights as Python."
+    },
+    {
+      "from": 326,
+      "to": 328,
+      "note": "Closes the loops. If no sentence qualified, returns no parts, and the page shows \"not found\"."
+    },
+    {
+      "from": 329,
+      "to": 334,
+      "note": "L329: the best score.\nL330 to L332: copies the list (`[...cands]`, so the original order is kept), sorts by score and takes the top 2.\nL333: keeps only sentences within 0.08 of the best, as in Python.\nL334: re-sorts by original order, so two sentences read in document order."
+    },
+    {
+      "from": 335,
+      "to": 337,
+      "note": "Returns the chosen sentences and the 6 best candidates for the trace view. Line 337 is blank."
+    },
+    {
+      "from": 338,
+      "to": 339,
+      "note": "Section comment: one question start to finish. `stage(name, data)` is called after each step so the page can draw the trace live."
+    },
+    {
+      "from": 340,
+      "to": 341,
+      "note": "L340: `ask(question, { llm = null, stage = () => {}, signal } = {})`: an options object with defaults, destructured in the signature.\nL341: no enabled documents means nothing to search, so it throws a helpful error."
+    },
+    {
+      "from": 342,
+      "to": 350,
+      "note": "L342 to L344: start time, a timing record and the time of the last lap.\nL345 to L350: `lap` is a **closure** that records how long a step took since the last call and moves the lap mark forward. It changes `t` in the enclosing scope, which is allowed because `t` was declared with `let`."
+    },
+    {
+      "from": 351,
+      "to": 353,
+      "note": "L351: full mode if extras are loaded.\nL352: the question's language, for the not-found message and the LLM prompt.\nL353: blank."
+    },
+    {
+      "from": 354,
+      "to": 355,
+      "note": "Reports the first trace step: the language, the normalised question and its BM25 tokens, for example `['عندنا', 'اجازه', 'امومه']` for «هل عندنا إجازة الأمومة؟». Line 355 is blank."
+    },
+    {
+      "from": 356,
+      "to": 362,
+      "note": "In full mode, translates the question (so «هل عندنا إجازة الأمومة؟» is also searched as \"Do we have maternity leave?\") and reports it with its time. In fast mode the step is reported as skipped, because the translation model is still loading."
+    },
+    {
+      "from": 363,
+      "to": 364,
+      "note": "The query wordings: the question, plus the translation if there is one. Line 364 is blank."
+    },
+    {
+      "from": 365,
+      "to": 367,
+      "note": "Embeds every wording with the `query: ` prefix and reports the first vector. Line 367 is blank."
+    },
+    {
+      "from": 368,
+      "to": 372,
+      "note": "L368: candidates per wording: 10 in full mode (room for the re-ranker), 5 in fast mode, the same rule as `RAGPipeline.retrieve`.\nL369: runs hybrid search per wording and spreads the result (`...this.hybrid(...)`) into one object together with the query text and vector.\nL370: one wording uses its hits directly; two are fused with `fuseHits`.\nL371: reports the search step.\nL372: blank."
+    },
+    {
+      "from": 373,
+      "to": 378,
+      "note": "In full mode, re-ranks the candidates against every wording and reports it; otherwise the step is skipped."
+    },
+    {
+      "from": 379,
+      "to": 380,
+      "note": "Keeps the top 5. Line 380 is blank."
+    },
+    {
+      "from": 381,
+      "to": 387,
+      "note": "L381: which signal decides confidence.\nL382: the floor and sure line come from `index.json`, which copied them from `rag/pipeline.py`, so both versions use the same bands. Array destructuring assigns both at once.\nL383: full mode uses the top re-ranker logit (or a value below the floor if there are no hits); fast mode uses the highest cosine, with a `0` in the list so an empty list gives 0 instead of `-Infinity`.\nL384: the three bands: `none` below the floor, `sure` at or above the sure line, `unsure` in between. This is the fix for the maternity-leave bug described in the README: an in-between score shows the closest passage marked \"not sure\" instead of refusing.\nL385: the display percentage.\nL386: reports the decision.\nL387: blank."
+    },
+    {
+      "from": 388,
+      "to": 389,
+      "note": "The default answer is \"not found\" in the question's language; `extraction` will hold the extractive candidates if used."
+    },
+    {
+      "from": 390,
+      "to": 391,
+      "note": "Only answers above the floor. If an LLM is configured, it is tried first."
+    },
+    {
+      "from": 392,
+      "to": 396,
+      "note": "L393: calls the LLM with the top hits and the abort signal.\nL394: checks whether the model replied with the exact not-found sentence in either language, the second gate the README describes.\nL395: records the answer with the model, provider and the messages sent.\nL396: an LLM refusal turns the band to `none`."
+    },
+    {
+      "from": 397,
+      "to": 401,
+      "note": "L397: any LLM failure lands here.\nL398: a user cancel (`AbortError` from the `AbortSignal`) is re-thrown, so the page stops instead of answering anyway.\nL399 to L400: any other error (bad key, rate limit, network) falls back to the extractive answer and records the LLM error so the page can show it. `[...new Set(...)]` gives the unique cited source numbers.\nL401: end of catch."
+    },
+    {
+      "from": 402,
+      "to": 406,
+      "note": "Without an LLM, the extractive answer is used directly."
+    },
+    {
+      "from": 407,
+      "to": 408,
+      "note": "Reports the answer step with the best candidates (`extraction?.cands || []` is safe when no extraction ran). Line 408 is blank."
+    },
+    {
+      "from": 409,
+      "to": 427,
+      "note": "L409 to L427: returns a plain record of the whole run, which the page shows and saves in the history.\nL410: a short unique id: the timestamp in base 36 plus 4 random base-36 characters.\nL411 to L422: when, the question, language, mode, translation, confidence kind and value, floor, sure line, band, percentage and answer.\nL423: a compact list of the hits: id, cosine, re-ranker score and the ranks in the dense and BM25 lists.\nL424 to L425: per-step timings and total time."
+    },
+    {
+      "from": 428,
+      "to": 429,
+      "note": "Closes the `Engine` class. Line 429 is blank."
+    },
+    {
+      "from": 430,
+      "to": 436,
+      "note": "`plausible`, the port of `plausible()` in `rag/translate.py`: rejects an empty translation or one longer than 3 x the question + 20 characters, and for 6 or more words requires at least half of them to be distinct, because small translation models sometimes loop and a looping output is worse than none. It is defined after the class but used inside it: function declarations are **hoisted** in JavaScript, so they are available throughout the module."
+    }
+  ]
+}

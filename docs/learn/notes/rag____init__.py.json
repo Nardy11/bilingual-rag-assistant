@@ -1,0 +1,38 @@
+{
+  "file": "rag/__init__.py",
+  "title": "Package entry",
+  "stage": "package",
+  "summary": "This file turns the `rag` folder into a Python package and decides what it exposes at the top level. It re-exports the two names most callers need, `RAGPipeline` (the whole system) and `Answer` (what a question returns), so you can write `from rag import RAGPipeline`. Nothing in the RAG pipeline runs here; it only wires names together.",
+  "key_ideas": [
+    {
+      "term": "Package `__init__.py`",
+      "explain": "Python runs this file the first time anything imports `rag`. Whatever it imports becomes available as `rag.<name>`."
+    },
+    {
+      "term": "Public surface",
+      "explain": "Re-exporting a small set of names hides the internal module layout. Callers depend on `rag.RAGPipeline`, not on the fact that it lives in `rag/pipeline.py`."
+    }
+  ],
+  "blocks": [
+    {
+      "from": 1,
+      "to": 2,
+      "note": "The module docstring. It describes the whole package in one line: bilingual question answering over documents, with citations. Tools like `help(rag)` show it."
+    },
+    {
+      "from": 3,
+      "to": 4,
+      "note": "A **relative import** (the leading dot means \"from this same package\"). It pulls `Answer` and `RAGPipeline` out of `rag/pipeline.py` so they are reachable as `rag.Answer` and `rag.RAGPipeline`. Note that importing `rag` therefore also imports the pipeline module and everything it imports (retrieval, FAISS, numpy), but not the heavy models, which are loaded lazily later."
+    },
+    {
+      "from": 5,
+      "to": 5,
+      "note": "`__all__` lists the public names. It controls what `from rag import *` brings in, and it tells linters and readers which names are the supported API."
+    },
+    {
+      "from": 6,
+      "to": 6,
+      "note": "A version string for the package. The FastAPI app in `rag/api.py` also reports version `1.0.0`; keeping one obvious place for it helps when you publish or debug a deployment."
+    }
+  ]
+}

@@ -1,0 +1,220 @@
+{
+  "file": "rag/normalize.py",
+  "title": "Normalisation",
+  "stage": "normalise",
+  "summary": "This file prepares text for two different jobs. `clean_text` tidies text you will store and show (it keeps Arabic as written), while `normalize_for_match` and `tokenize` produce an aggressive, matching-only form for BM25 and answer checks, so that spelling variants like «إجازة» and «اجازه» count as the same word. It also has `detect_language`, which every other stage uses to pick Arabic or English behaviour. Text goes in, and either cleaned text, a normalised string, a list of BM25 tokens, or a language code comes out.",
+  "key_ideas": [
+    {
+      "term": "Display text vs match text",
+      "explain": "You never show the normalised form to a user. Matching runs on a simplified copy (no tashkeel, one alef shape, ة as ه), while citations and answers quote the original text exactly."
+    },
+    {
+      "term": "Arabic orthographic variation",
+      "explain": "The same Arabic word is often spelled several ways in practice: hamza on alef dropped (أ vs ا), ة vs ه and ى vs ي swapped, diacritics present or not. Folding these variants together is cheap and raises lexical recall a lot."
+    },
+    {
+      "term": "Light prefix stripping",
+      "explain": "Instead of a full Arabic stemmer, only the article and attached conjunction/prepositions (ال، وال، بال، كال، فال، لل) are removed, and only when at least 3 letters remain. «الإجازة» then matches «إجازة» without merging different words that share a root."
+    },
+    {
+      "term": "Stopwords",
+      "explain": "Very common words (\"the\", «في») carry little meaning for retrieval. Dropping them keeps BM25 scores focused on content words like \"maternity\"."
+    },
+    {
+      "term": "Unicode NFKC",
+      "explain": "Unicode normalisation form NFKC replaces compatibility characters with their plain equivalents, for example the Arabic ligature ﻻ becomes لا and a no-break space becomes a normal space."
+    }
+  ],
+  "blocks": [
+    {
+      "from": 1,
+      "to": 12,
+      "note": "The module docstring explains the two levels of normalisation. `clean_text` keeps text readable for storage and display, and `normalize_for_match` is only for matching. It also notes that the same rules are ported to JavaScript in `docs/app.js`: the browser demo must tokenise a query exactly like Python tokenised the documents, or BM25 would compare different token forms. `tests/test_normalize.py` pins the behaviour so the two stay in step."
+    },
+    {
+      "from": 13,
+      "to": 15,
+      "note": "`from __future__ import annotations` makes every type hint a lazy string. You can then write `list[str]` or `str | None` on older Pythons (3.8, 3.9) and name a class inside its own body."
+    },
+    {
+      "from": 16,
+      "to": 18,
+      "note": "Only the standard library is needed: `re` for regular expressions and `unicodedata` for Unicode normalisation (NFKC). Keeping this module dependency-free means tests and the lexical side run without any model download."
+    },
+    {
+      "from": 19,
+      "to": 20,
+      "note": "`_TASHKEEL` is a compiled regex character class of Arabic diacritic code points: U+0610 to U+061A (small honorific marks), U+064B to U+065F (the harakat: fatha, damma, kasra, tanween, shadda, sukun and friends), U+0670 (superscript alef) and the Quranic annotation ranges U+06D6 to U+06DC, U+06DF to U+06E8 and U+06EA to U+06ED. The characters are written literally in the source, so the file looks odd in an editor. Compiling once at import time is faster than compiling on every call."
+    },
+    {
+      "from": 21,
+      "to": 21,
+      "note": "`_TATWEEL` is the kashida character U+0640 (ـ). It only stretches a word visually (كـــتاب), so it is always removed, even from display text."
+    },
+    {
+      "from": 22,
+      "to": 22,
+      "note": "`_INVISIBLE` matches zero-width and direction-control characters: U+200B to U+200F (zero-width space, ZWNJ, ZWJ, LRM, RLM), U+202A to U+202E (bidi embeddings and overrides), U+2066 to U+2069 (bidi isolates) and U+FEFF (byte-order mark). Copy-pasted Arabic often carries these. They are invisible but would split or change tokens, so a query that looks identical would fail to match."
+    },
+    {
+      "from": 23,
+      "to": 23,
+      "note": "`_ALEF` matches the four alef variants آ أ إ ٱ (madda, hamza above, hamza below, wasla). They are all replaced by the bare alef ا, because writers frequently drop the hamza: «أمومة» and «امومة» must be the same word for matching."
+    },
+    {
+      "from": 24,
+      "to": 24,
+      "note": "`str.maketrans` builds a character translation table. It maps both Arabic-Indic digits (٠ to ٩, U+0660 range) and Extended Arabic-Indic digits (۰ to ۹, U+06F0 range, used in Persian and Urdu) to ASCII 0 to 9. NFKC does not do this for you, so «٣٠٠» in the product FAQ becomes `300` and matches an English question about \"300\"."
+    },
+    {
+      "from": 25,
+      "to": 28,
+      "note": "L25: `_ARABIC_CHAR` matches any character in the Arabic block U+0600 to U+06FF. It is used to detect Arabic tokens and to count Arabic letters in `detect_language`.\nL26: `_LATIN_CHAR` matches an ASCII letter, for the English side of `detect_language`.\nL27: `_TOKEN` defines what a BM25 token is, as three alternatives tried left to right: a number with an optional decimal or thousands part (`1.5`, `10,000` stay one token), a run of lowercase Latin letters (text is lowercased before this runs, so `[a-z]` is enough), or a run of Arabic letters from ء to ي (U+0621 to U+064A). Punctuation, tashkeel and anything else is skipped, which is how `findall` doubles as a splitter.\nL28: blank."
+    },
+    {
+      "from": 29,
+      "to": 32,
+      "note": "The Arabic prefixes to strip: the article ال and the article with an attached conjunction or preposition (و ب ك ف + ال) and لل (لِ + ال, as in «للموظفين»). The tuple is ordered longest first, so «والموظفين» loses «وال» as a unit. The comment states the safety rule enforced later: strip only when at least 3 letters remain, so short words like «الله» are left alone."
+    },
+    {
+      "from": 33,
+      "to": 38,
+      "note": "English stopwords as a `frozenset`. The words are written as one long string and split on whitespace, which is shorter than a list of quoted strings. A `frozenset` gives O(1) membership tests and cannot be changed by accident at runtime. Words like \"what\", \"how\" and \"do\" are dropped because every question has them, so they would only add noise to BM25 scores."
+    },
+    {
+      "from": 39,
+      "to": 45,
+      "note": "Arabic stopwords, built the same way: prepositions, question words (هل، ما، كيف، كم), pronouns, demonstratives and single-letter particles (و ب ل ك ف). Some words appear in two spellings (أين and اين, أنا and انا) to cover hamza variants. One subtlety for learners: tokens are compared **after** normalisation, so words that normalise to a form not in this set are kept. For example «على» becomes `علي` and «إلى» becomes `الي`, and neither form is listed, so `tokenize(\"على إلى\")` keeps both. Listing stopwords in their normalised form would avoid that."
+    },
+    {
+      "from": 46,
+      "to": 47,
+      "note": "`strip_tashkeel` takes a string and returns it without diacritics. The type hints `text: str -> str` document the contract."
+    },
+    {
+      "from": 48,
+      "to": 50,
+      "note": "One regex substitution removes all diacritics, then `str.replace` removes tatweel. So «إِجَازَة» becomes «إجازة». `normalize_arabic` calls it as its first step."
+    },
+    {
+      "from": 51,
+      "to": 52,
+      "note": "`clean_text` is the readable cleanup. It is what ingestion stores and what users later see in citations, so it must never change the words themselves."
+    },
+    {
+      "from": 53,
+      "to": 53,
+      "note": "NFKC Unicode normalisation. It folds compatibility characters into their standard forms: Arabic presentation-form ligatures from old PDFs (ﻻ to لا), full-width Latin letters, and no-break spaces to plain spaces. It does not remove tashkeel, so readable Arabic stays as written."
+    },
+    {
+      "from": 54,
+      "to": 54,
+      "note": "Removes invisible marks and tatweel. Neither carries meaning for a reader once the text is shown in a normal `dir=\"rtl\"` container."
+    },
+    {
+      "from": 55,
+      "to": 55,
+      "note": "Collapses runs of spaces, tabs and no-break spaces (`\\xa0`, written literally in the class) into a single space. NFKC already turned no-break spaces into spaces on line 53, so including it here is a harmless safety net."
+    },
+    {
+      "from": 56,
+      "to": 57,
+      "note": "L56: removes spaces around newlines, so `\"a  \\n  b\"` becomes `\"a\\nb\"`. Newlines are kept because the chunker treats them as sentence and paragraph boundaries.\nL57: three or more newlines become exactly two, so a document keeps paragraph breaks but not huge vertical gaps."
+    },
+    {
+      "from": 58,
+      "to": 60,
+      "note": "Trims leading and trailing whitespace and returns the cleaned text. Lines 59 and 60 are blank."
+    },
+    {
+      "from": 61,
+      "to": 66,
+      "note": "`normalize_arabic` signature and docstring. The docstring lists exactly which letter forms are unified: alef variants to ا, alef maqsura ى to ي, taa marbuta ة to ه, and hamza on waw/yaa (ؤ ئ) to a bare hamza ء. All of these are spellings that real writers mix up."
+    },
+    {
+      "from": 67,
+      "to": 67,
+      "note": "Step 1: remove tashkeel and tatweel, so later replacements see bare letters."
+    },
+    {
+      "from": 68,
+      "to": 68,
+      "note": "Step 2: every alef variant becomes ا. «إجازة» becomes «اجازة»."
+    },
+    {
+      "from": 69,
+      "to": 69,
+      "note": "Step 3: ى becomes ي and ة becomes ه. «اجازة» becomes «اجازه». Chaining `.replace` calls is simple and fast for single characters."
+    },
+    {
+      "from": 70,
+      "to": 71,
+      "note": "Step 4: hamza seated on waw (ؤ) or yaa (ئ) becomes a bare hamza ء, then the normalised string is returned. So «مسؤول» and «مسءول» match."
+    },
+    {
+      "from": 72,
+      "to": 73,
+      "note": "Blank lines between functions (PEP 8 style)."
+    },
+    {
+      "from": 74,
+      "to": 75,
+      "note": "`normalize_for_match` is the full matching form. The docstring states the rule that matters most: never use this for display."
+    },
+    {
+      "from": 76,
+      "to": 81,
+      "note": "L76: NFKC first, so ligatures and odd spaces are standard before anything else runs.\nL77: removes invisible direction and zero-width marks.\nL78: applies the Arabic letter unification, then `str.translate(_DIGITS)` maps Arabic-Indic digits to ASCII.\nL79: lowercases, so \"Maternity\" and \"maternity\" match. Arabic has no case, so this only affects Latin text.\nL80 to L81: blank."
+    },
+    {
+      "from": 82,
+      "to": 82,
+      "note": "`_strip_ar_prefix` is private (leading underscore): only `tokenize` should call it."
+    },
+    {
+      "from": 83,
+      "to": 88,
+      "note": "L83: tries each prefix in order, longest first.\nL84: strips only if the token starts with the prefix **and** at least 3 letters would remain. «الفلتر» (6 letters) becomes «فلتر», but «الله» is kept because «له» would be only 2 letters.\nL85: returns the token without the prefix. `token[len(p) :]` is a slice from the end of the prefix to the end of the string. Only the first matching prefix is removed.\nL86: no prefix matched, so the token is returned unchanged.\nL87 to L88: blank."
+    },
+    {
+      "from": 89,
+      "to": 90,
+      "note": "`tokenize` produces BM25 tokens. The bare `*` makes `remove_stopwords` **keyword-only**: callers must write `tokenize(s, remove_stopwords=False)`, which is clearer than a positional `False`. The extractive generator uses that form to count all words in a sentence."
+    },
+    {
+      "from": 91,
+      "to": 92,
+      "note": "Starts an empty output list, normalises the whole text once, then loops over every regex match. `findall` returns the matched substrings, so it splits and filters in one pass."
+    },
+    {
+      "from": 93,
+      "to": 94,
+      "note": "Skips stopwords from either language when asked. Checking both sets means mixed-language questions work too."
+    },
+    {
+      "from": 95,
+      "to": 96,
+      "note": "If the token starts with an Arabic character, the article/prefix is stripped. «الإجازة» has already become `الاجازه`, and now becomes `اجازه`, the same token as «إجازة»."
+    },
+    {
+      "from": 97,
+      "to": 98,
+      "note": "A naive English plural fold: for Latin tokens longer than 3 letters that end in `s` but not `ss`, drop the final `s`. \"days\" becomes \"day\" and \"filters\" becomes \"filter\", while \"class\" and \"bus\" are left alone. It is not a real stemmer (\"news\" becomes \"new\"), but it is predictable and easy to port to JavaScript exactly."
+    },
+    {
+      "from": 99,
+      "to": 102,
+      "note": "Appends the final token and returns the list. Example: `tokenize(\"هل عندنا إجازة الأمومة؟\")` returns `['عندنا', 'اجازه', 'امومه']`: «هل» is a stopword, the question mark is skipped, and the article on «الأمومة» is removed. Lines 101 and 102 are blank."
+    },
+    {
+      "from": 103,
+      "to": 104,
+      "note": "`detect_language` returns `'ar'` or `'en'`. The whole pipeline uses it: to pick the translation direction, the \"not found\" message language, the chunk's `lang` field and the `dir` attribute in HTML."
+    },
+    {
+      "from": 105,
+      "to": 107,
+      "note": "Counts Arabic-block characters and ASCII letters and picks Arabic only if it has strictly more. A mostly Arabic question with an English product name (\"TDS\") is still Arabic. Ties and text with no letters at all default to English."
+    }
+  ]
+}
